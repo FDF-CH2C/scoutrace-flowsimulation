@@ -18,13 +18,17 @@ class Activity(object):
         self.minDuration = minDuration
         self.maxDuration = maxDuration
         self.name = name
+        self.accFirstTeamStart = []
+        self.accLastTeamEnd = []
+        self.accWaits = []
+        self.accMaxQueue = []
         
     def setup(self, env):
         self.env = env
         self.slots = simpy.Resource(env, self.capacity)
         self.firstTeamStart = 0
         self.lastTeamEnd = 0
-        self.accWaitTime = 0
+        self.waits = []
         self.maxQueue = 0
 
     def acceptTeam(self, team):
@@ -45,10 +49,16 @@ class Activity(object):
         self.lastTeamEnd = tOut
 
     def addWaitTime(self, waitTime):
-        self.accWaitTime += waitTime
+        self.waits.append(waitTime)
 
     def updateMaxQueue(self):
         self.maxQueue = max(len(self.slots.queue), self.maxQueue)
+
+    def persistStats(self):
+        self.accFirstTeamStart.append(self.firstTeamStart)
+        self.accLastTeamEnd.append(self.lastTeamEnd)
+        self.accWaits.append(self.waits)
+        self.accMaxQueue.append(self.maxQueue)
 
 class Transport(object):
     def __init__(self, distance):
@@ -59,11 +69,13 @@ class Team:
         self.name = name
         self.course = course
         self.startTime = startTime
-        self.totalWaitTime = 0
-        self.endTime = 0
+        self.accWaits = []
+        self.accEndTime = []
 
     def setup(self, env):
         self.env = env
+        self.waits = []
+        self.endTime = 0
         
     def start(self, env):
         for element in self.course:
@@ -79,13 +91,15 @@ class Team:
                     #print "%s arrives at %s at %s" % (self.name, element.name, formatTime(arrivalTime))
                     yield request
                     waitTime = env.now-arrivalTime
-                    if waitTime > 0:
-                        #print "%s waited for %d minutes at %s" % (self.name, waitTime, element.name)
-                        self.totalWaitTime += waitTime
-                        element.addWaitTime(waitTime)
+                    self.waits.append(waitTime)
+                    element.addWaitTime(waitTime)
                     yield env.process(element.acceptTeam(self))
         self.endTime = env.now
         #print "%s: Start=%s, Finish=%s, Total wait=%d minutes" % (self.name, formatTime(self.startTime), formatTime(self.endTime), self.totalWaitTime)
+
+    def persistStats(self):
+        self.accWaits.append(self.waits)
+        self.accEndTime.append(self.endTime)
 
 def formatTime(timestamp):
     hour = timestamp / 60
@@ -104,6 +118,29 @@ def printCourse(course):
     print outputStr
     print "Total distance: %d" % totalDistance
 
+def avg(list):
+    if len(list) > 0:
+        return round(sum(list)/len(list),2)
+    return 0
+
+def minMaxAvg(list):
+    return "(%s/%s/%s)" % (min(list), max(list), avg(list)) 
+
+def minMaxAvgTime(list):
+    return "(%s/%s/%s)" % (formatTime(min(list)), formatTime(max(list)), formatTime(avg(list)))
+
+def minMaxAvgSumPerRun(listOfLists):
+    sumList = []
+    for list in listOfLists:
+        sumList.append(sum(list))
+    return "(%s/%s/%s)" % (min(sumList), max(sumList), avg(sumList)) 
+
+def minMaxAvgAvgPerRun(listOfLists):
+    avgList = []
+    for list in listOfLists:
+        avgList.append(avg(list))
+    return "(%s/%s/%s)" % (min(avgList), max(avgList), avg(avgList)) 
+
 def start(env, teams, activities):
     for a in activities:
         a.setup(env)
@@ -115,7 +152,7 @@ def start(env, teams, activities):
 
 
 #Create environment - TODO: parameterise number of teams
-def simulate():
+def simulate(noOfRuns):
     """
     Setup course
     Activity: capacity, min, max, name 
@@ -144,18 +181,35 @@ def simulate():
     printCourse(CourseOB)
 
     #Setup teams
-    teams = []
+    Teams = []
     for i in range(4):
-        teams.append(Team("Hold %d" % i, CourseV, tStart+i*10))
+        Teams.append(Team("Hold %d" % i, CourseV, tStart+i*10))
 
-    for i in range(3):
+    for i in range(noOfRuns):
         env = simpy.Environment()
-        env.process(start(env, teams, Activities))
+        env.process(start(env, Teams, Activities))
         env.run(until=tEnd)
+        for t in Teams:
+            t.persistStats()
+        for a in Activities:
+            a.persistStats()
 
-    #Collect stats from activities
-    for act in Activities:
-        print "%s: Total wait=%d minutes, Max queue=%d, Start=%s, End=%s"  % (act.name, act.accWaitTime, act.maxQueue, formatTime(act.firstTeamStart), formatTime(act.lastTeamEnd))
+        """
+        #Collect stats from activities
+        print "Activities"
+        for act in Activities:
+            print "%s: Total wait=%d minutes, avg. wait=%d minutes, Max queue=%d, Start=%s, End=%s"  % (act.name, sum(act.waits), avg(act.waits), act.maxQueue, formatTime(act.firstTeamStart), formatTime(act.lastTeamEnd))
 
+        #Collect stats from teams
+        print "Teams"
+        for team in Teams:
+            print "%s: Start=%s, End=%s, Total wait=%d minutes, avg. wait=%d" % (team.name, formatTime(team.startTime), formatTime(team.endTime), sum(team.waits), avg(team.waits))
+        """
+
+    for t in Teams:
+        print "%s: Start=%s, End=%s, Total wait=%s, avg. wait/run=%s" % (t.name, formatTime(t.startTime), minMaxAvgTime(t.accEndTime), minMaxAvgSumPerRun(t.accWaits), minMaxAvgAvgPerRun(t.accWaits))
+
+    for a in Activities:
+        print "%s: Start=%s, End=%s, Total wait=%s, avg. wait=%s, max queue=%s" % (a.name, minMaxAvgTime(a.accFirstTeamStart), minMaxAvgTime(a.accLastTeamEnd), minMaxAvgSumPerRun(a.accWaits), minMaxAvgAvgPerRun(a.accWaits), minMaxAvg(a.accMaxQueue))
 #Run simulation - TODO: collect stats and run simulation multiple times
-simulate()
+simulate(3)
