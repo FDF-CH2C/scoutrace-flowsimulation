@@ -3,6 +3,7 @@
 Setup course model and simulate with a number of teams.
 Output waiting times and completion times"""
 
+from __future__ import division #Enables 5/2==2.5 instead of 5/2==2
 import random
 import simpy
 
@@ -87,7 +88,7 @@ class Team:
             if type(element) is Activity:   
                 with element.slots.request() as request:
                     arrivalTime = env.now
-                    element.updateMaxQueue
+                    element.updateMaxQueue()
                     #print "%s arrives at %s at %s" % (self.name, element.name, formatTime(arrivalTime))
                     yield request
                     waitTime = env.now-arrivalTime
@@ -118,13 +119,13 @@ def printCourse(course):
     print outputStr
     print "Total distance: %d" % totalDistance
 
-def avg(list):
+def avg(list, decimals=2):
     if len(list) > 0:
-        return round(sum(list)/len(list),2)
+        return round(sum(list)/len(list), decimals)
     return 0
 
 def minMaxAvg(list):
-    return "(%s/%s/%s)" % (min(list), max(list), avg(list)) 
+    return "(%d/%d/%.2f)" % (min(list), max(list), avg(list)) 
 
 def minMaxAvgTime(list):
     return "(%s/%s/%s)" % (formatTime(min(list)), formatTime(max(list)), formatTime(avg(list)))
@@ -133,13 +134,13 @@ def minMaxAvgSumPerRun(listOfLists):
     sumList = []
     for list in listOfLists:
         sumList.append(sum(list))
-    return "(%s/%s/%s)" % (min(sumList), max(sumList), avg(sumList)) 
+    return "(%s/%s/%s)" % (formatTime(min(sumList)), formatTime(max(sumList)), formatTime(avg(sumList))) 
 
 def minMaxAvgAvgPerRun(listOfLists):
     avgList = []
     for list in listOfLists:
         avgList.append(avg(list))
-    return "(%s/%s/%s)" % (min(avgList), max(avgList), avg(avgList)) 
+    return "(%s/%s/%s)" % (formatTime(min(avgList)), formatTime(max(avgList)), formatTime(avg(avgList))) 
 
 def start(env, teams, activities):
     for a in activities:
@@ -182,9 +183,10 @@ def simulate(noOfRuns):
 
     #Setup teams
     Teams = []
-    for i in range(4):
+    for i in range(8):
         Teams.append(Team("Hold %d" % i, CourseV, tStart+i*10))
 
+    print "Running %d simulations" % noOfRuns
     for i in range(noOfRuns):
         env = simpy.Environment()
         env.process(start(env, Teams, Activities))
@@ -212,4 +214,4 @@ def simulate(noOfRuns):
     for a in Activities:
         print "%s: Start=%s, End=%s, Total wait=%s, avg. wait=%s, max queue=%s" % (a.name, minMaxAvgTime(a.accFirstTeamStart), minMaxAvgTime(a.accLastTeamEnd), minMaxAvgSumPerRun(a.accWaits), minMaxAvgAvgPerRun(a.accWaits), minMaxAvg(a.accMaxQueue))
 #Run simulation - TODO: collect stats and run simulation multiple times
-simulate(3)
+simulate(100)
