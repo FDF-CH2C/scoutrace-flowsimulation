@@ -3,9 +3,10 @@
 Setup course model and simulate with a number of teams.
 Output waiting times and completion times"""
 
-from __future__ import division #Enables 5/2==2.5 instead of 5/2==2
 import random
 import simpy
+import numpy
+import matplotlib.pyplot as pyplot
 
 tStart=7*60               #07:00
 tEnd=30*60                #06:00 next day
@@ -103,6 +104,8 @@ class Team:
         self.accEndTime.append(self.endTime)
 
 def formatTime(timestamp):
+    if timestamp is None:
+        return 0
     hour = timestamp / 60
     min = timestamp % 60
     return "%02d:%02d" % (hour, min)
@@ -116,8 +119,8 @@ def printCourse(course):
             totalDistance += element.distance
         if type(element) is Activity:
             outputStr += "%s[%d]" % (element.name, element.capacity)
-    print outputStr
-    print "Total distance: %d" % totalDistance
+    print(outputStr)
+    print("Total distance: %d" % totalDistance)
 
 def avg(list, decimals=2):
     if len(list) > 0:
@@ -181,9 +184,9 @@ def simulate(noOfRuns):
 
     CourseV = [P1,T1,P2,T2,P3,T3,PN,TN,PX]
     CourseOB = [P1,T1,P2,T2,P3,T3a,P3a,T3b,PN,TN,PX]
-    print "Væbnerrute:"
+    print("Væbnerrute:")
     printCourse(CourseV)
-    print "OB-rute:"
+    print ("OB-rute:")
     printCourse(CourseOB)
 
     #Setup teams
@@ -191,7 +194,7 @@ def simulate(noOfRuns):
     for i in range(8):
         Teams.append(Team("Hold %d" % i, CourseV, tStart+i*10))
 
-    print "Running %d simulations" % noOfRuns
+    print("Running %d simulations" % noOfRuns)
     for i in range(noOfRuns):
         env = simpy.Environment()
         env.process(start(env, Teams, Activities))
@@ -213,10 +216,21 @@ def simulate(noOfRuns):
             print "%s: Start=%s, End=%s, Total wait=%d minutes, avg. wait=%d" % (team.name, formatTime(team.startTime), formatTime(team.endTime), sum(team.waits), avg(team.waits))
         """
 
-    for t in Teams:
-        print "%s: Start=%s, End=%s, Total wait=%s, avg. wait/run=%s" % (t.name, formatTime(t.startTime), minMaxAvgTime(t.accEndTime), minMaxAvgSumPerRun(t.accWaits), minMaxAvgAvgPerRun(t.accWaits))
+#    for t in Teams:
+#        print("%s: Start=%s, End=%s, Total wait=%s, avg. wait/run=%s" % (t.name, formatTime(t.startTime), minMaxAvgTime(t.accEndTime), minMaxAvgSumPerRun(t.accWaits), minMaxAvgAvgPerRun(t.accWaits)))
 
+    dataWait = []
+    labels = []
     for a in Activities:
-        print "%s: Start=%s, End=%s, Total wait=%s, avg. wait=%s, max queue=%s" % (a.name, minMaxAvgTime(a.accFirstTeamStart), minMaxAvgTime(a.accLastTeamEnd), minMaxAvgSumPerRun(a.accWaits), minMaxAvgAvgPerRun(a.accWaits), minMaxAvgFormat(a.accMaxQueue))
-#Run simulation - TODO: collect stats and run simulation multiple times
-simulate(100)
+        sumWaits = []
+        for list in a.accWaits:
+            sumWaits.append(sum(list))                        
+        dataWait.append(sumWaits)
+        labels.append("%s\n Kap.=%d,\n[%s;%s]" % (a.name, a.capacity, a.minDuration, a.maxDuration))
+#        print("%s: Start=%s, End=%s, Total wait=%s, avg. wait=%s, max queue=%s" % (a.name, minMaxAvgTime(a.accFirstTeamStart), minMaxAvgTime(a.accLastTeamEnd), minMaxAvgSumPerRun(a.accWaits), minMaxAvgAvgPerRun(a.accWaits), minMaxAvgFormat(a.accMaxQueue)))
+
+    pyplot.boxplot(dataWait, labels=labels, vert=False)
+    pyplot.title("Samlet ventetid pr. post")
+    pyplot.show()
+#Run simulation
+simulate(50)
