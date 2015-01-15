@@ -125,22 +125,27 @@ def avg(list, decimals=2):
     return 0
 
 def minMaxAvg(list):
-    return "(%d/%d/%.2f)" % (min(list), max(list), avg(list)) 
+    return [min(list), max(list), avg(list)] 
+
+def minMaxAvgFormat(list):
+    mma = minMaxAvg(list)
+    return "(%d/%d/%.2f)" % (mma[0], mma[1], mma[2])
 
 def minMaxAvgTime(list):
-    return "(%s/%s/%s)" % (formatTime(min(list)), formatTime(max(list)), formatTime(avg(list)))
+    mma = minMaxAvg(list)
+    return "(%s/%s/%s)" % (formatTime(mma[0]), formatTime(mma[1]), formatTime(mma[2]))
 
 def minMaxAvgSumPerRun(listOfLists):
     sumList = []
     for list in listOfLists:
         sumList.append(sum(list))
-    return "(%s/%s/%s)" % (formatTime(min(sumList)), formatTime(max(sumList)), formatTime(avg(sumList))) 
+    return minMaxAvgTime(sumList)
 
 def minMaxAvgAvgPerRun(listOfLists):
     avgList = []
     for list in listOfLists:
         avgList.append(avg(list))
-    return "(%s/%s/%s)" % (formatTime(min(avgList)), formatTime(max(avgList)), formatTime(avg(avgList))) 
+    return minMaxAvgTime(avgList)
 
 def start(env, teams, activities):
     for a in activities:
@@ -212,6 +217,6 @@ def simulate(noOfRuns):
         print "%s: Start=%s, End=%s, Total wait=%s, avg. wait/run=%s" % (t.name, formatTime(t.startTime), minMaxAvgTime(t.accEndTime), minMaxAvgSumPerRun(t.accWaits), minMaxAvgAvgPerRun(t.accWaits))
 
     for a in Activities:
-        print "%s: Start=%s, End=%s, Total wait=%s, avg. wait=%s, max queue=%s" % (a.name, minMaxAvgTime(a.accFirstTeamStart), minMaxAvgTime(a.accLastTeamEnd), minMaxAvgSumPerRun(a.accWaits), minMaxAvgAvgPerRun(a.accWaits), minMaxAvg(a.accMaxQueue))
+        print "%s: Start=%s, End=%s, Total wait=%s, avg. wait=%s, max queue=%s" % (a.name, minMaxAvgTime(a.accFirstTeamStart), minMaxAvgTime(a.accLastTeamEnd), minMaxAvgSumPerRun(a.accWaits), minMaxAvgAvgPerRun(a.accWaits), minMaxAvgFormat(a.accMaxQueue))
 #Run simulation - TODO: collect stats and run simulation multiple times
 simulate(100)
