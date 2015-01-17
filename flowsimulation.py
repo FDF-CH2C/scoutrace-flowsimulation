@@ -307,11 +307,11 @@ def simulate(noOfRuns, noVTeams, noOBTeams):
         for a in Activities:
             a.persistStats()
 
-    #Collect stats from activities
+    """
     print("Activities")
     for act in Activities:
         print("%s: Total wait=%s, avg. wait=%s, Max queue=%s, Start=%s, End=%s"  % (act.name, minMaxAvgSumPerRun(act.accWaits), minMaxAvgAvgPerRun(act.accWaits), minMaxAvg(act.accMaxQueue), minMaxAvgTime(act.accFirstTeamStart), minMaxAvgTime(act.accLastTeamEnd)))
-
+    """
     """
     for t in Teams:
         print("%s: Start=%s, End=%s, Total wait=%s, avg. wait/run=%s" % (t.name, formatTime(t.startTime), minMaxAvgTime(t.accEndTime), minMaxAvgSumPerRun(t.accWaits), minMaxAvgAvgPerRun(t.accWaits)))
