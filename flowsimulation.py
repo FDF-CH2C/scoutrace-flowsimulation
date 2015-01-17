@@ -7,11 +7,16 @@ import random
 import simpy
 import numpy
 import matplotlib.pyplot as pyplot
+import matplotlib.patches as mpatches
 
 tStart=7*60               #07:00
-tEnd=30*60                #06:00 next day
-minSpeed=1               #km/h
-maxSpeed=2.5               #km/h
+tStartSimul=3             #No. of teams to start simultaneously
+tStartInterval=15         #Time between starting teams
+tEnd=31*60                #07:00 next day
+minSpeed=1.5              #km/h
+minSpeedOB=2              #km/h
+maxSpeed=2.5              #km/h
+maxSpeedOB=4              #km/h
 r=random.Random(3823)
 
 class Activity(object):
@@ -60,17 +65,24 @@ class Activity(object):
         self.accFirstTeamStart.append(self.firstTeamStart)
         self.accLastTeamEnd.append(self.lastTeamEnd)
         self.accWaits.append(self.waits)
-        self.accMaxQueue.append(self.maxQueue)
+        self.accMaxQueue.append(self.maxQueue-1) #Due to updating queue before "yield", value is one off
 
 class Transport(object):
     def __init__(self, distance):
         self.distance = distance
 
 class Team:
-    def __init__(self, name, course, startTime):
+    def __init__(self, name, teamType, course, startTime):
         self.name = name
+        self.teamType = teamType #TODO: Do we need to save this?
         self.course = course
         self.startTime = startTime
+        if teamType=="V":
+            self.minSpeed = minSpeed
+            self.maxSpeed = maxSpeed
+        else:
+            self.minSpeed = minSpeedOB
+            self.maxSpeed = maxSpeedOB
         self.accWaits = []
         self.accEndTime = []
 
@@ -82,8 +94,9 @@ class Team:
     def start(self, env):
         for element in self.course:
             if type(element) is Transport:
-                walkingTime = r.uniform(element.distance/minSpeed, element.distance/maxSpeed)*60
-                #print "Team %s walks %d km in %d minutes" % (self.name, element.distance, walkingTime) #TODO: Format time in hh:mm
+                #TODO: Better model for speed, perhaps as function of time of day?
+                walkingTime = r.uniform(element.distance/self.minSpeed, element.distance/self.maxSpeed)*60
+                #print "Team %s walks %d km in %s" % (self.name, element.distance, formatTime(walkingTime))
                 yield self.env.timeout(walkingTime)
 
             if type(element) is Activity:   
@@ -104,40 +117,61 @@ class Team:
         self.accEndTime.append(self.endTime)
 
 def plotActivityStats(activities, title):
+    #TODO: Plot as subplots on same figure
     myFontdict={'fontsize': 8}
     
     dataWait = [] #List of activity wait lists
-    dataStartEnd = [] #List of activity start(P0.05)/end(P0.95) time lists
+    dataStartEnd = [] #List of [start(5,10,25th percentile),end(75,90,95th percentile)] per activity
+    dataMaxQueue = []
     labels = []
+    noOfRuns = len(activities[0].accWaits)
     for a in activities:
-        dataStartEnd.append([numpy.percentile(a.accFirstTeamStart,5), numpy.percentile(a.accLastTeamEnd,95)])
-        sumWaits = []
+        dataStartEnd.append([numpy.percentile(a.accFirstTeamStart,[5,10,25,50]), numpy.percentile(a.accLastTeamEnd,[75,90,95,50])])
+        dataMaxQueue.append(a.accMaxQueue)
+        actWaits = []
+        teamsArrived = []
         for list in a.accWaits:
-            sumWaits.append(sum(list))                        
-        dataWait.append(sumWaits)
-        labels.append("%s\n Kap.=%d,\n[%s;%s]" % (a.name, a.capacity, a.minDuration, a.maxDuration))
-#        print("%s: Start=%s, End=%s, Total wait=%s, avg. wait=%s, max queue=%s" % (a.name, minMaxAvgTime(a.accFirstTeamStart), minMaxAvgTime(a.accLastTeamEnd), minMaxAvgSumPerRun(a.accWaits), minMaxAvgAvgPerRun(a.accWaits), minMaxAvgFormat(a.accMaxQueue)))
+            actWaits.extend(list)
+            teamsArrived.append(len(list))                       
+        dataWait.append(actWaits)
+        labels.append("%s (%.2f hold),\nKapacitet=%d, [%s;%s]" % (a.name, avg(teamsArrived), a.capacity, a.minDuration, a.maxDuration))
+#       print("%s: Start=%s, End=%s, Total wait=%s, avg. wait=%s, max queue=%s" % (a.name, minMaxAvgTime(a.accFirstTeamStart), minMaxAvgTime(a.accLastTeamEnd), minMaxAvgSumPerRun(a.accWaits), minMaxAvgAvgPerRun(a.accWaits), minMaxAvgFormat(a.accMaxQueue)))
     
     #"Plot" course
-    pyplot.title(title, fontdict=myFontdict)
+    #pyplot.title(title, fontdict=myFontdict)
     
     #Plot total wait time/activity as boxplot
     #figwait = fig.add_subplot(211, label="Samlet ventetid pr. post")
     pyplot.boxplot(dataWait, labels=labels, vert=False)
-    pyplot.title("Samlet ventetid pr. post")
+    pyplot.title("Ventetid pr. post (%d gennemløb)" % noOfRuns)
     pyplot.show()
 
+    #Plot max queue/activity as boxplot
+    pyplot.boxplot(dataMaxQueue, labels=labels, vert=False)
+    pyplot.title("Længste kø pr. post (%d gennemløb)" % noOfRuns)
+    pyplot.show()
+    
     #Plot activity start/end times as Gantt chart
     fig = pyplot.figure()
     figgantt = fig.add_subplot(111)
     y = 0
     xmin = tEnd
     xmax = tStart
-    for i in dataStartEnd:
-        figgantt.barh(y, i[1]-i[0], left=i[0])
+    for startList, endList in dataStartEnd:
+        figgantt.barh(y, endList[0]-startList[0], left=startList[0], alpha=0.3) #5th/95th percentile
+        figgantt.barh(y, endList[1]-startList[1], left=startList[1], alpha=0.3) #10th/90th percentile
+        figgantt.barh(y, endList[2]-startList[2], left=startList[2], alpha=0.3) #25th/75th percentile
+        figgantt.barh(y, endList[3]-startList[3], left=startList[3], alpha=0.3, edgecolor='red') #50th percentile
         y = y+1
-        xmin = min(i[0],xmin)
-        xmax = max(i[1],xmax)
+        xmin = min(startList[0],xmin)
+        xmax = max(endList[0],xmax)
+
+    patch5_95 = mpatches.Patch(alpha=0.3, label='95%')
+    patch10_90 = mpatches.Patch(alpha=0.45, label='90%')
+    patch25_75 = mpatches.Patch(alpha=0.6, label='75%')
+    patch50 = mpatches.Patch(alpha=0.75, edgecolor='red', label='50%')
+    pyplot.legend(handles=[patch5_95, patch10_90, patch25_75, patch50])
+    
     labelsy = pyplot.yticks(numpy.arange(0.5,len(activities)+0.5),labels)
     pyplot.setp(labelsy)
     figgantt.set_xlim(xmin, xmax)
@@ -165,6 +199,7 @@ def printCourse(course, courseName, noTeams):
     outputStr += "\nTotal distance: %d" % totalDistance
     return outputStr 
 
+#Helper methods for performing calculations on 1- and 2-dimensional arrays
 def avg(list, decimals=2):
     if len(list) > 0:
         return round(sum(list)/len(list), decimals)
@@ -181,12 +216,14 @@ def minMaxAvgTime(list):
     mma = minMaxAvg(list)
     return "(%s/%s/%s)" % (formatTime(mma[0]), formatTime(mma[1]), formatTime(mma[2]))
 
+"""Find min/max/avg of aggregated (summed) lists"""
 def minMaxAvgSumPerRun(listOfLists):
     sumList = []
     for list in listOfLists:
         sumList.append(sum(list))
     return minMaxAvgTime(sumList)
 
+"""Find min/max/avg of aggregated (averaged) lists"""
 def minMaxAvgAvgPerRun(listOfLists):
     avgList = []
     for list in listOfLists:
@@ -202,7 +239,6 @@ def start(env, teams, activities):
         yield env.timeout(waitTime)
         env.process(t.start(env))
 
-
 #Create environment
 def simulate(noOfRuns, noVTeams, noOBTeams):
     """
@@ -210,38 +246,56 @@ def simulate(noOfRuns, noVTeams, noOBTeams):
     Activity: capacity, min, max, name 
     Transport: distance
     """
-    P1 = Activity(2, 15, 35, "Startpost")
+    P1 = Activity(6, 5, 15, "Startpost")
     T1 = Transport(2)
-    P2 = Activity(3, 20, 35, "Sjov post")
+    P2 = Activity(3, 15, 25, "Sjov post")
     T2 = Transport(1.5)
-    P3 = Activity(2, 15, 35, "Mørk post")
-    T3 = Transport(2)
+    P3 = Activity(2, 15, 25, "Mørk post")
+    T3 = Transport(3)
     T3a = Transport(1.5)
     P3a = Activity(1, 25, 40, "OB post")
-    T3b = Transport(1.5)
+    T3b = Transport(2.5)
     P4 = Activity(99, 60, 70, "Madpost")
     T4 = Transport(2)
-    P5 = Activity(2, 35, 60, "Vandpost")
+    P5 = Activity(2, 35, 50, "Vandpost")
     T5 = Transport(2)
+    P6 = Activity(2, 20, 40, "Mørkepost")
+    T6 = Transport(3)
+    P6 = Activity(2, 20, 40, "Kodepost")
+    T6 = Transport(3)
+    T6a = Transport(2)
+    P6a = Activity(1, 25, 35, "OB post 2")
+    T6b = Transport(3)
+    P7 = Activity(99, 5, 20, "Død post")
+    T7 = Transport(3)
+    P8 = Activity(4, 35, 50, "Raftepost")
+    T8 = Transport(3)
     PN = Activity(3, 25, 55, "Forbudt Område")
     TN = Transport(2)
     PX = Activity(99, None, None, "Mål")
 
-    Activities = [P1, P2, P3, P3a, P4, P5, PN, PX]
+    Activities = [P1, P2, P3, P3a, P4, P5, P6, P6a, P7, P8, PN, PX]
 
-    CourseV = [P1,T1,P2,T2,P3,T3,P4,T4,P5,T5,PN,TN,PX]
-    CourseOB = [P1,T1,P2,T2,P3,T3a,P3a,T3b,P4,T4,P5,T5,PN,TN,PX]
+    CourseV = [P1,T1,P2,T2,P3,T3,P4,T4,P5,T5,P6,T6,P7,T7,P8,T8,PN,TN,PX]
+    CourseOB = [P1,T1,P2,T2,P3,T3a,P3a,T3b,P4,T4,P5,T5,P6,T6a,P6a,T6b,P7,T7,P8,T8,PN,TN,PX]
 
     print(printCourse(CourseV, "Væbnerrute", noVTeams))
     print(printCourse(CourseOB, "OB-rute", noOBTeams))
 
-    #Setup teams
+    #Setup teams - start 3 teams every 15 minutes
     Teams = []
-    for i in range(noVTeams):
-        Teams.append(Team("Hold %d" % i, CourseV, tStart+i*10))
-    for i in range(noOBTeams):
-        Teams.append(Team("Hold %s" % i, CourseOB, tStart+80+i*10))
+    startTime = tStart
 
+    teamType="V"
+    course=CourseV
+    for j in range(noVTeams+noOBTeams):
+        Teams.append(Team("Hold %d" % j, teamType, course, startTime))
+        if j%tStartSimul==tStartSimul-1:
+            startTime+=tStartInterval
+        if j==noVTeams-1: #We have created last VTeam - switch to OB
+            teamType="OB"
+            course=CourseOB
+        j += 1
 
     print("Running %d simulations" % noOfRuns)
     for i in range(noOfRuns):
@@ -253,22 +307,18 @@ def simulate(noOfRuns, noVTeams, noOBTeams):
         for a in Activities:
             a.persistStats()
 
-        """
-        #Collect stats from activities
-        print "Activities"
-        for act in Activities:
-            print "%s: Total wait=%d minutes, avg. wait=%d minutes, Max queue=%d, Start=%s, End=%s"  % (act.name, sum(act.waits), avg(act.waits), act.maxQueue, formatTime(act.firstTeamStart), formatTime(act.lastTeamEnd))
+    #Collect stats from activities
+    print("Activities")
+    for act in Activities:
+        print("%s: Total wait=%s, avg. wait=%s, Max queue=%s, Start=%s, End=%s"  % (act.name, minMaxAvgSumPerRun(act.accWaits), minMaxAvgAvgPerRun(act.accWaits), minMaxAvg(act.accMaxQueue), minMaxAvgTime(act.accFirstTeamStart), minMaxAvgTime(act.accLastTeamEnd)))
 
-        #Collect stats from teams
-        print "Teams"
-        for team in Teams:
-            print "%s: Start=%s, End=%s, Total wait=%d minutes, avg. wait=%d" % (team.name, formatTime(team.startTime), formatTime(team.endTime), sum(team.waits), avg(team.waits))
-        """
-
-#    for t in Teams:
-#        print("%s: Start=%s, End=%s, Total wait=%s, avg. wait/run=%s" % (t.name, formatTime(t.startTime), minMaxAvgTime(t.accEndTime), minMaxAvgSumPerRun(t.accWaits), minMaxAvgAvgPerRun(t.accWaits)))
-
+    """
+    for t in Teams:
+        print("%s: Start=%s, End=%s, Total wait=%s, avg. wait/run=%s" % (t.name, formatTime(t.startTime), minMaxAvgTime(t.accEndTime), minMaxAvgSumPerRun(t.accWaits), minMaxAvgAvgPerRun(t.accWaits)))
+    """
+    
     title = printCourse(CourseV, "Væbnerrute",  noVTeams) + "\n" + printCourse(CourseOB, "OB-rute", noOBTeams)
     plotActivityStats(Activities, title)
+    
 #Run simulation
-simulate(10,12,8)
+simulate(100,12,8)
