@@ -10,7 +10,7 @@ import matplotlib.pyplot as pyplot
 
 tStart=7*60               #07:00
 tEnd=30*60                #06:00 next day
-minSpeed=1.5               #km/h
+minSpeed=1               #km/h
 maxSpeed=2.5               #km/h
 r=random.Random(3823)
 
@@ -103,6 +103,49 @@ class Team:
         self.accWaits.append(self.waits)
         self.accEndTime.append(self.endTime)
 
+def plotActivityStats(activities, title):
+    myFontdict={'fontsize': 8}
+    
+    dataWait = [] #List of activity wait lists
+    dataStartEnd = [] #List of activity start(P0.05)/end(P0.95) time lists
+    labels = []
+    for a in activities:
+        dataStartEnd.append([numpy.percentile(a.accFirstTeamStart,5), numpy.percentile(a.accLastTeamEnd,95)])
+        sumWaits = []
+        for list in a.accWaits:
+            sumWaits.append(sum(list))                        
+        dataWait.append(sumWaits)
+        labels.append("%s\n Kap.=%d,\n[%s;%s]" % (a.name, a.capacity, a.minDuration, a.maxDuration))
+#        print("%s: Start=%s, End=%s, Total wait=%s, avg. wait=%s, max queue=%s" % (a.name, minMaxAvgTime(a.accFirstTeamStart), minMaxAvgTime(a.accLastTeamEnd), minMaxAvgSumPerRun(a.accWaits), minMaxAvgAvgPerRun(a.accWaits), minMaxAvgFormat(a.accMaxQueue)))
+    
+    #"Plot" course
+    pyplot.title(title, fontdict=myFontdict)
+    
+    #Plot total wait time/activity as boxplot
+    #figwait = fig.add_subplot(211, label="Samlet ventetid pr. post")
+    pyplot.boxplot(dataWait, labels=labels, vert=False)
+    pyplot.title("Samlet ventetid pr. post")
+    pyplot.show()
+
+    #Plot activity start/end times as Gantt chart
+    fig = pyplot.figure()
+    figgantt = fig.add_subplot(111)
+    y = 0
+    xmin = tEnd
+    xmax = tStart
+    for i in dataStartEnd:
+        figgantt.barh(y, i[1]-i[0], left=i[0])
+        y = y+1
+        xmin = min(i[0],xmin)
+        xmax = max(i[1],xmax)
+    labelsy = pyplot.yticks(numpy.arange(0.5,len(activities)+0.5),labels)
+    pyplot.setp(labelsy)
+    figgantt.set_xlim(xmin, xmax)
+    figgantt.xaxis.set_major_locator(pyplot.MultipleLocator(60))
+    figgantt.xaxis.set_major_formatter(pyplot.FuncFormatter(lambda x,pos: formatTime(x)))
+    figgantt.set_title("Åbne- og lukketider pr. post")
+    pyplot.show()
+
 def formatTime(timestamp):
     if timestamp is None:
         return 0
@@ -110,8 +153,8 @@ def formatTime(timestamp):
     min = timestamp % 60
     return "%02d:%02d" % (hour, min)
 
-def printCourse(course):
-    outputStr = ''
+def printCourse(course, courseName, noTeams):
+    outputStr = "%s (%d hold):\n" % (courseName, noTeams)
     totalDistance = 0
     for element in course:
         if type(element) is Transport:
@@ -119,8 +162,8 @@ def printCourse(course):
             totalDistance += element.distance
         if type(element) is Activity:
             outputStr += "%s[%d]" % (element.name, element.capacity)
-    print(outputStr)
-    print("Total distance: %d" % totalDistance)
+    outputStr += "\nTotal distance: %d" % totalDistance
+    return outputStr 
 
 def avg(list, decimals=2):
     if len(list) > 0:
@@ -160,8 +203,8 @@ def start(env, teams, activities):
         env.process(t.start(env))
 
 
-#Create environment - TODO: parameterise number of teams
-def simulate(noOfRuns):
+#Create environment
+def simulate(noOfRuns, noVTeams, noOBTeams):
     """
     Setup course
     Activity: capacity, min, max, name 
@@ -169,30 +212,36 @@ def simulate(noOfRuns):
     """
     P1 = Activity(2, 15, 35, "Startpost")
     T1 = Transport(2)
-    P2 = Activity(2, 50, 55, "Sjov post")
+    P2 = Activity(3, 20, 35, "Sjov post")
     T2 = Transport(1.5)
-    P3 = Activity(1, 15, 35, "Mørk post")
+    P3 = Activity(2, 15, 35, "Mørk post")
     T3 = Transport(2)
     T3a = Transport(1.5)
     P3a = Activity(1, 25, 40, "OB post")
     T3b = Transport(1.5)
+    P4 = Activity(99, 60, 70, "Madpost")
+    T4 = Transport(2)
+    P5 = Activity(2, 35, 60, "Vandpost")
+    T5 = Transport(2)
     PN = Activity(3, 25, 55, "Forbudt Område")
     TN = Transport(2)
     PX = Activity(99, None, None, "Mål")
 
-    Activities = [P1, P2, P3, P3a, PN, PX]
+    Activities = [P1, P2, P3, P3a, P4, P5, PN, PX]
 
-    CourseV = [P1,T1,P2,T2,P3,T3,PN,TN,PX]
-    CourseOB = [P1,T1,P2,T2,P3,T3a,P3a,T3b,PN,TN,PX]
-    print("Væbnerrute:")
-    printCourse(CourseV)
-    print ("OB-rute:")
-    printCourse(CourseOB)
+    CourseV = [P1,T1,P2,T2,P3,T3,P4,T4,P5,T5,PN,TN,PX]
+    CourseOB = [P1,T1,P2,T2,P3,T3a,P3a,T3b,P4,T4,P5,T5,PN,TN,PX]
+
+    print(printCourse(CourseV, "Væbnerrute", noVTeams))
+    print(printCourse(CourseOB, "OB-rute", noOBTeams))
 
     #Setup teams
     Teams = []
-    for i in range(8):
+    for i in range(noVTeams):
         Teams.append(Team("Hold %d" % i, CourseV, tStart+i*10))
+    for i in range(noOBTeams):
+        Teams.append(Team("Hold %s" % i, CourseOB, tStart+80+i*10))
+
 
     print("Running %d simulations" % noOfRuns)
     for i in range(noOfRuns):
@@ -219,18 +268,7 @@ def simulate(noOfRuns):
 #    for t in Teams:
 #        print("%s: Start=%s, End=%s, Total wait=%s, avg. wait/run=%s" % (t.name, formatTime(t.startTime), minMaxAvgTime(t.accEndTime), minMaxAvgSumPerRun(t.accWaits), minMaxAvgAvgPerRun(t.accWaits)))
 
-    dataWait = []
-    labels = []
-    for a in Activities:
-        sumWaits = []
-        for list in a.accWaits:
-            sumWaits.append(sum(list))                        
-        dataWait.append(sumWaits)
-        labels.append("%s\n Kap.=%d,\n[%s;%s]" % (a.name, a.capacity, a.minDuration, a.maxDuration))
-#        print("%s: Start=%s, End=%s, Total wait=%s, avg. wait=%s, max queue=%s" % (a.name, minMaxAvgTime(a.accFirstTeamStart), minMaxAvgTime(a.accLastTeamEnd), minMaxAvgSumPerRun(a.accWaits), minMaxAvgAvgPerRun(a.accWaits), minMaxAvgFormat(a.accMaxQueue)))
-
-    pyplot.boxplot(dataWait, labels=labels, vert=False)
-    pyplot.title("Samlet ventetid pr. post")
-    pyplot.show()
+    title = printCourse(CourseV, "Væbnerrute",  noVTeams) + "\n" + printCourse(CourseOB, "OB-rute", noOBTeams)
+    plotActivityStats(Activities, title)
 #Run simulation
-simulate(50)
+simulate(10,12,8)
