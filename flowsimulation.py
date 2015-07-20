@@ -4,6 +4,7 @@ Setup course model and simulate with a number of teams.
 Output waiting times and completion times"""
 
 import random
+import numbers
 import simpy
 import numpy
 import matplotlib.pyplot as pyplot
@@ -13,10 +14,10 @@ tStart = 7 * 60             # 07:00
 tStartSimul = 3             # No. of teams to start simultaneously
 tStartInterval = 15         # Time between starting teams
 tEnd = 31 * 60              # 07:00 next day
-minSpeed = 1.5              # km/h
-minSpeedOB = 2              # km/h
-maxSpeed = 2.5              # km/h
-maxSpeedOB = 4              # km/h
+minSpeed = 2                # km/h
+minSpeedOB = 2.5            # km/h
+maxSpeed = 4                # km/h
+maxSpeedOB = 5              # km/h
 r = random.Random(3823)
 
 
@@ -74,12 +75,6 @@ class Activity(object):
         self.accMaxQueue.append(self.maxQueue - 1)
 
 
-class Transport(object):
-
-    def __init__(self, distance):
-        self.distance = distance
-
-
 class Team:
 
     def __init__(self, name, teamType, course, startTime):
@@ -103,13 +98,13 @@ class Team:
 
     def start(self, env):
         for element in self.course:
-            if type(element) is Transport:
+            if isinstance(element, numbers.Number):
                 # TODO: Better model for speed, perhaps as function of time of
                 # day?
-                walkingTime = r.uniform(element.distance / self.minSpeed,
-                                        element.distance / self.maxSpeed) * 60
+                walkingTime = r.uniform(element / self.minSpeed,
+                                        element / self.maxSpeed) * 60
                 # print "Team %s walks %d km in %s" % (self.name,
-                # element.distance, formatTime(walkingTime))
+                # element, formatTime(walkingTime))
                 yield self.env.timeout(walkingTime)
 
             if type(element) is Activity:
@@ -231,9 +226,9 @@ def printCourse(course, courseName, noTeams):
     outputStr = "%s (%d hold):\n" % (courseName, noTeams)
     totalDistance = 0
     for element in course:
-        if type(element) is Transport:
-            outputStr += "-(%d)->" % element.distance
-            totalDistance += element.distance
+        if isinstance(element, numbers.Number):
+            outputStr += "-(%d)->" % element
+            totalDistance += element
         if type(element) is Activity:
             outputStr += "%s[%d]" % (element.name, element.capacity)
     outputStr += "\nTotal distance: %d" % totalDistance
@@ -295,42 +290,84 @@ def simulate(noOfRuns, noVTeams, noOBTeams):
     """
     Setup course
     Activity: capacity, min, max, name
-    Transport: distance
     """
-    P1 = Activity(6, 5, 15, "Startpost")
-    T1 = Transport(2)
-    P2 = Activity(3, 15, 25, "Sjov post")
-    T2 = Transport(1.5)
-    P3 = Activity(2, 15, 25, "Mørk post")
-    T3 = Transport(3)
-    T3a = Transport(1.5)
-    P3a = Activity(1, 25, 40, "OB post")
-    T3b = Transport(2.5)
-    P4 = Activity(99, 60, 70, "Madpost")
-    T4 = Transport(2)
-    P5 = Activity(3, 35, 50, "Vandpost")
-    T5 = Transport(2)
-    P6 = Activity(2, 20, 40, "Mørkepost")
-    T6 = Transport(3)
-    P6 = Activity(2, 20, 40, "Kodepost")
-    T6 = Transport(3)
-    T6a = Transport(2)
-    P6a = Activity(1, 25, 35, "OB post 2")
-    T6b = Transport(3)
-    P7 = Activity(99, 5, 20, "Død post")
-    T7 = Transport(3)
-    P8 = Activity(4, 35, 50, "Raftepost")
-    T8 = Transport(3)
-    PN = Activity(3, 25, 55, "Forbudt Område")
-    TN = Transport(2)
-    PX = Activity(99, None, None, "Mål")
 
-    Activities = [P1, P2, P3, P3a, P4, P5, P6, P6a, P7, P8, PN, PX]
+    Post0 = Activity(6, 5, 15, "Startpost")
+    Post1 = Activity(3, 5, 15, "Vild post")
+    Post2 = Activity(10, 2, 5, "Død post")
+    Post3 = Activity(2, 10, 15, "Mørk post")
+    Post3a = Activity(2, 15, 30, "OB post")
+    Post4 = Activity(5, 10, 30, "Post")
+    Post5 = Activity(3, 10, 20, "Vandpost")
+    Post6 = Activity(99, 5, 15, "Mørkepost")
+    Post6a = Activity(3, 25, 35, "OB post 2")
+    Post7 = Activity(3, 5, 15, "Post")
+    Post8 = Activity(3, 10, 20, "Raftepost")
+    Post9 = Activity(99, 60, 70, "Madpost")
+    Post10 = Activity(3, 10, 25, "Kodepost")
+    Post11 = Activity(3, 5, 15, "Kodepost")
+    Post12 = Activity(3, 10, 25, "Kodepost")
+    Post13 = Activity(99, 5, 15, "Kodepost")
+    Post14 = Activity(3, 15, 30, "Kodepost")
+    Post15 = Activity(3, 10, 25, "Kodepost")
+    Post16 = Activity(99, 5, 10, "Kodepost")
+    Post17 = Activity(3, 10, 25, "Kodepost")
+    Post18 = Activity(3, 10, 20, "Kodepost")
+    PostN = Activity(8, 25, 55, "Forbudt Område")
+    PostX = Activity(99, None, None, "Mål")
 
-    CourseV = [P1, T1, P2, T2, P3, T3, P4, T4, P5,
-               T5, P6, T6, P7, T7, P8, T8, PN, TN, PX]
-    CourseOB = [P1, T1, P2, T2, P3, T3a, P3a, T3b, P4, T4,
-                P5, T5, P6, T6a, P6a, T6b, P7, T7, P8, T8, PN, TN, PX]
+    Activities = [Post0, Post1, Post2, Post3, Post3a, Post4, Post5, Post6,
+                  Post6a, Post7, Post8, Post9, Post10, Post11, Post12,
+                  Post13, Post14, Post15, Post16, Post17, Post18, PostN,
+                  PostX]
+
+    """
+    Link activities [act1, distance1, act2, distance2, ...]
+    """
+    CourseV = [Post0, 1,
+               Post1, 1,
+               Post2, 1,
+               Post3, 2,
+               Post4, 1,
+               Post5, 1,
+               Post6, 1.5,
+               Post7, 1,
+               Post8, 1,
+               Post9, 1,
+               Post10, 1,
+               Post11, 1,
+               Post12, 1,
+               Post13, 1,
+               Post14, 1,
+               Post15, 1,
+               Post16, 1,
+               Post17, 1,
+               Post18, 1,
+               PostN, 1,
+               PostX]
+    CourseOB = [Post0, 1,
+                Post1, 1,
+                Post2, 1,
+                Post3, 1.5,
+                Post3a, 1.5,
+                Post4, 1,
+                Post5, 1,
+                Post6, 2,
+                Post6a, 2,
+                Post7, 1,
+                Post8, 1,
+                Post9, 1,
+                Post10, 1,
+                Post11, 1,
+                Post12, 1,
+                Post13, 1,
+                Post14, 1,
+                Post15, 1,
+                Post16, 1,
+                Post17, 1,
+                Post18, 1,
+                PostN, 1,
+                PostX]
 
     print(printCourse(CourseV, "Væbnerrute", noVTeams))
     print(printCourse(CourseOB, "OB-rute", noOBTeams))
@@ -382,4 +419,4 @@ def simulate(noOfRuns, noVTeams, noOBTeams):
     plotActivityStats(Activities, title)
 
 # Run simulation (#Runs, #VTeams, #OBTeams)
-simulate(100, 15, 12)
+simulate(10, 15, 12)
