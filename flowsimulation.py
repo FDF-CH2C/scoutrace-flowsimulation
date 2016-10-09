@@ -10,10 +10,10 @@ import numpy
 import matplotlib.pyplot as pyplot
 import matplotlib.patches as mpatches
 
-tStart = 7 * 60             # 07:00
+tStart = 8 * 60             # 08:00
 tStartSimul = 3             # No. of teams to start simultaneously
 tStartInterval = 15         # Time between starting teams
-tEnd = 31 * 60              # 07:00 next day
+tEnd = 32 * 60              # 08:00 next day
 minSpeed = 2                # km/h
 minSpeedOB = 2.5            # km/h
 maxSpeed = 4                # km/h
@@ -423,4 +423,4 @@ def simulate(noOfRuns, noVTeams, noOBTeams):
     plotActivityStats(Activities, title)
 
 # Run simulation (#Runs, #VTeams, #OBTeams)
-simulate(10, 20, 12)
+simulate(100, 25, 20)
