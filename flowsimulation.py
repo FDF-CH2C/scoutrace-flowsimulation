@@ -202,7 +202,7 @@ def plotActivityStats(activities, title):
     patch10_90 = mpatches.Patch(alpha=0.45, label='90%')
     patch25_75 = mpatches.Patch(alpha=0.6, label='75%')
     patch50 = mpatches.Patch(alpha=0.75, edgecolor='red', label='50%')
-    pyplot.legend(handles=[patch5_95, patch10_90, patch25_75, patch50])
+    pyplot.legend(handles=[patch5_95, patch10_90, patch25_75, patch50], loc=2)
 
     labelsy = pyplot.yticks(numpy.arange(0.5, len(activities) + 0.5), labels)
     pyplot.setp(labelsy)
@@ -286,7 +286,7 @@ def start(env, teams, activities):
 # Create environment
 
 
-def simulate(noOfRuns, noVTeams, noOBTeams):
+def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     """
     Setup course
     Activity: capacity, min, max, name
@@ -296,14 +296,14 @@ def simulate(noOfRuns, noVTeams, noOBTeams):
     Post1 = Activity(6, 15, 20, "Post1")    
     Post2 = Activity(4, 15, 20, "Post2")
     Post3 = Activity(3, 10, 15, "Post3")
-    Post4 = Activity(99, 15, 20, "Post4")
-    Post5 = Activity(4, 20, 25, "Post5")
-    Post6 = Activity(99, 15, 40, "Post6")
-    Post7 = Activity(3, 15, 20, "Post7")
-    Post8 = Activity(99, 60, 80, "Post8")
-    Post9 = Activity(3, 10, 20, "Post9")
-    Post10 = Activity(6, 10, 20, "Post10")
-    Post10a = Activity(2, 10, 20, "Post10a")
+    Post4 = Activity(6, 15, 30, "Post4")
+    Post5 = Activity(6, 20, 25, "Post5")
+    Post6 = Activity(6, 15, 30, "Post6")
+    Post7 = Activity(4, 15, 20, "Post7")
+    Post8 = Activity(99, 60, 70, "Post8")
+    Post9 = Activity(3, 10, 15, "Post9")
+    Post10 = Activity(5, 10, 15, "Post10")
+    Post10a = Activity(3, 10, 20, "Post10a")
     Post11 = Activity(3, 15, 20, "Post11")
     Post12 = Activity(3, 10, 15, "Post12")
     Post13 = Activity(3, 10, 15, "Post13")
@@ -318,6 +318,22 @@ def simulate(noOfRuns, noVTeams, noOBTeams):
     Link activities [act1, distance1, act2, distance2, ...]
     """
     CourseV = [Post0, 0.9,
+               Post1, 1.5,
+               Post2, 1.5,
+               Post3, 1.6,
+               Post4, 1.5,
+               Post5, 1.7,
+               Post6, 1.3,
+               Post7, 1.7,
+               Post8, 2,
+               Post9, 1.6,
+               Post10, 2.3,
+               Post11, 2,
+               Post12, 2.2,
+               Post13, 1,
+               Post14, 1.7,
+               Post15]
+    CourseS = [Post0, 0.9,
                Post1, 1.5,
                Post2, 1.5,
                Post3, 1.6,
@@ -352,6 +368,7 @@ def simulate(noOfRuns, noVTeams, noOBTeams):
                Post15]
 
     print(printCourse(CourseV, "Væbnerrute", noVTeams))
+    print(printCourse(CourseV, "Seniorrute", noSTeams))
     print(printCourse(CourseOB, "OB-rute", noOBTeams))
 
     # Setup teams - start 3 teams every 15 minutes
@@ -360,11 +377,14 @@ def simulate(noOfRuns, noVTeams, noOBTeams):
 
     teamType = "V"
     course = CourseV
-    for j in range(noVTeams + noOBTeams):
+    for j in range(noVTeams + noSTeams + noOBTeams):
         Teams.append(Team("Hold %d" % j, teamType, course, startTime))
         if j % tStartSimul == tStartSimul - 1:
             startTime += tStartInterval
-        if j == noVTeams - 1:  # We have created last VTeam - switch to OB
+        if j == noVTeams - 1:  # We have created last VTeam - switch to S
+            teamType = "S"
+            course = CourseS
+        if j == noVTeams + noSTeams - 1:  # We have created last STeam - switch to OB
             teamType = "OB"
             course = CourseOB
         j += 1
@@ -397,8 +417,9 @@ def simulate(noOfRuns, noVTeams, noOBTeams):
     """
 
     title = printCourse(CourseV, "Væbnerrute",  noVTeams) + "\n"
+    title = printCourse(CourseS, "Seniorrute",  noSTeams) + "\n"
     title += printCourse(CourseOB, "OB-rute", noOBTeams)
     plotActivityStats(Activities, title)
 
-# Run simulation (#Runs, #VTeams, #OBTeams)
-simulate(100, 20, 25)
+# Run simulation (#Runs, #VTeams, #STeams, #OBTeams)
+simulate(100, 15, 10, 15)
