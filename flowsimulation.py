@@ -227,11 +227,11 @@ def printCourse(course, courseName, noTeams):
     totalDistance = 0
     for element in course:
         if isinstance(element, numbers.Number):
-            outputStr += "-(%d)->" % element
+            outputStr += "-(%.1f)->" % element
             totalDistance += element
         if type(element) is Activity:
             outputStr += "%s[%d]" % (element.name, element.capacity)
-    outputStr += "\nTotal distance: %d" % totalDistance
+    outputStr += "\nTotal distance: %.1f" % totalDistance
     return outputStr
 
 # Helper methods for performing calculations on 1- and 2-dimensional arrays
@@ -298,77 +298,87 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     Post3 = Activity(3, 10, 15, "Post3")
     Post4 = Activity(6, 15, 30, "Post4")
     Post5 = Activity(6, 20, 25, "Post5")
+    Post5a = Activity(6, 15, 20, "Post5a")
     Post6 = Activity(6, 15, 30, "Post6")
     Post7 = Activity(4, 15, 20, "Post7")
-    Post8 = Activity(99, 60, 70, "Post8")
-    Post9 = Activity(3, 10, 15, "Post9")
-    Post10 = Activity(5, 10, 15, "Post10")
+    Post8 = Activity(4, 15, 20, "Post8")
+    Post9 = Activity(99, 60, 70, "Post9")
+    Post10 = Activity(3, 10, 15, "Post10")
     Post10a = Activity(3, 10, 20, "Post10a")
-    Post11 = Activity(3, 15, 20, "Post11")
-    Post12 = Activity(3, 10, 15, "Post12")
+    Post11 = Activity(5, 10, 15, "Post11")
+    Post12 = Activity(4, 10, 15, "Post12")
     Post13 = Activity(3, 10, 15, "Post13")
-    Post14 = Activity(8, 15, 30, "Post14")
-    Post15 = Activity(99, None, None, "Mål")
+    Post13a = Activity(5, 10, 15, "Post13a")
+    Post14 = Activity(3, 10, 15, "Post14")
+    Post15 = Activity(8, 15, 30, "Post15")
+    Post16 = Activity(99, None, None, "Mål")
 
-    Activities = [Post0, Post1, Post2, Post3, Post4, Post5, Post6,
+    Activities = [Post0, Post1, Post2, Post3, Post4, Post5, Post5a, Post6,
                   Post7, Post8, Post9, Post10, Post10a, Post11, Post12,
-                  Post13, Post14, Post15]
+                  Post13, Post13a, Post14, Post15, Post16]
 
     """
     Link activities [act1, distance1, act2, distance2, ...]
     """
     CourseV = [Post0, 0.9,
-               Post1, 1.5,
-               Post2, 1.5,
-               Post3, 1.6,
+               Post1, 1.8,
+               Post2, 1.9,
+               Post3, 1.8,
                Post4, 1.5,
-               Post5, 1.7,
+               Post5, 1.9,
                Post6, 1.3,
-               Post7, 1.7,
-               Post8, 2,
-               Post9, 1.6,
-               Post10, 2.3,
-               Post11, 2,
-               Post12, 2.2,
-               Post13, 1,
+               Post7, 1.8,
+               Post8, 0.7,
+               Post9, 2,
+               Post10, 3,
+               Post11, 0.7,
+               Post12, 1.75,
+               Post13, 1.8,
                Post14, 1.7,
-               Post15]
+               Post15, 0.5,
+               Post16]
     CourseS = [Post0, 0.9,
-               Post1, 1.5,
-               Post2, 1.5,
-               Post3, 1.6,
+               Post1, 1.8,
+               Post2, 1.9,
+               Post3, 1.8,
                Post4, 1.5,
-               Post5, 1.7,
+               Post5, 1.4,
+               Post5a, 2,
                Post6, 1.3,
-               Post7, 1.7,
-               Post8, 2,
-               Post9, 1.6,
-               Post10, 2.3,
-               Post11, 2,
-               Post12, 2.2,
-               Post13, 1,
+               Post7, 1.8,
+               Post8, 0.7,
+               Post9, 2,
+               Post10, 0.5,
+               Post10a, 2.5,
+               Post11, 0.7,
+               Post12, 1.75,
+               Post13, 1.8,
                Post14, 1.7,
-               Post15]
+               Post15, 0.5,
+               Post16]
     CourseOB = [Post0, 0.9,
-               Post1, 1.5,
-               Post2, 1.5,
-               Post3, 1.6,
+               Post1, 1.8,
+               Post2, 1.9,
+               Post3, 1.8,
                Post4, 1.5,
-               Post5, 1.7,
+               Post5, 1.4,
+               Post5a, 2,
                Post6, 1.3,
-               Post7, 1.7,
-               Post8, 2,
-               Post9, 1.6,
-               Post10, 1.2,
-               Post10a, 1.8, 
-               Post11, 2,
-               Post12, 2.2,
-               Post13, 1,
+               Post7, 1.8,
+               Post8, 0.7,
+               Post9, 2,
+               Post10, 0.5,
+               Post10a, 2.5,
+               Post11, 0.7,
+               Post12, 1.75,
+               Post13, 1.6,
+               Post13a, 1,
                Post14, 1.7,
-               Post15]
+               Post15, 0.5,
+               Post16]
 
     print(printCourse(CourseV, "Væbnerrute", noVTeams))
-    print(printCourse(CourseV, "Seniorrute", noSTeams))
+    print(printCourse(CourseS, "Seniorrute", noSTeams))
     print(printCourse(CourseOB, "OB-rute", noOBTeams))
 
     # Setup teams - start 3 teams every 15 minutes
@@ -399,16 +409,15 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
         for a in Activities:
             a.persistStats()
 
-    """
+    
     print("Activities")
     for act in Activities:
-        print("%s: Total wait=%s, avg. wait=%s, Max queue=%s,
-              Start=%s, End=%s"
+        print("%s: Total wait=%s, avg. wait=%s, Max queue=%s, Start=%s, End=%s"
               % (act.name, minMaxAvgSumPerRun(act.accWaits),
                  minMaxAvgAvgPerRun(act.accWaits), minMaxAvg(act.accMaxQueue),
                  minMaxAvgTime(act.accFirstTeamStart),
                  minMaxAvgTime(act.accLastTeamEnd)))
-    """
+    
     """
     for t in Teams:
         print("%s: Start=%s, End=%s, Total wait=%s, avg. wait/run=%s"
@@ -422,4 +431,4 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     plotActivityStats(Activities, title)
 
 # Run simulation (#Runs, #VTeams, #STeams, #OBTeams)
-simulate(100, 15, 10, 15)
+simulate(100, 18, 9, 20)
