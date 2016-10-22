@@ -71,8 +71,7 @@ class Activity(object):
         self.accFirstTeamStart.append(self.firstTeamStart)
         self.accLastTeamEnd.append(self.lastTeamEnd)
         self.accWaits.append(self.waits)
-        # Due to updating queue before "yield", value is one off
-        self.accMaxQueue.append(self.maxQueue - 1)
+        self.accMaxQueue.append(self.maxQueue)
 
 
 class Team:
@@ -292,28 +291,28 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     Activity: capacity, min, max, name
     """
 
-    Post0 = Activity(6, 5, 15, "Startpost")
+    Post0 = Activity(3, 10, 13, "Startpost")
     Post1 = Activity(6, 15, 20, "Post1")    
     Post2 = Activity(4, 15, 20, "Post2")
     Post3 = Activity(3, 10, 15, "Post3")
-    Post4 = Activity(6, 15, 30, "Post4")
-    Post5 = Activity(6, 20, 25, "Post5")
-    Post5a = Activity(6, 15, 20, "Post5a")
-    Post6 = Activity(6, 15, 30, "Post6")
-    Post7 = Activity(4, 15, 20, "Post7")
+    Post4 = Activity(6, 15, 25, "Post4")
+    #Post5 = Activity(4, 15, 25, "Post5")
+    Post5a = Activity(6, 12, 15, "Post5a")
+    Post6 = Activity(6, 20, 30, "Post6")
+    Post7 = Activity(4, 13, 18, "Post7")
     Post8 = Activity(4, 15, 20, "Post8")
     Post9 = Activity(99, 60, 70, "Post9")
-    Post10 = Activity(3, 10, 15, "Post10")
-    Post10a = Activity(3, 10, 20, "Post10a")
+    Post10 = Activity(6, 20, 25, "Post10")
+    Post10a = Activity(3, 10, 15, "Post10a")
     Post11 = Activity(5, 10, 15, "Post11")
-    Post12 = Activity(4, 10, 15, "Post12")
+    Post12 = Activity(4, 15, 20, "Post12")
     Post13 = Activity(3, 10, 15, "Post13")
     Post13a = Activity(5, 10, 15, "Post13a")
     Post14 = Activity(3, 10, 15, "Post14")
     Post15 = Activity(8, 15, 30, "Post15")
     Post16 = Activity(99, None, None, "Mål")
 
-    Activities = [Post0, Post1, Post2, Post3, Post4, Post5, Post5a, Post6,
+    Activities = [Post0, Post1, Post2, Post3, Post4, Post5a, Post6,
                   Post7, Post8, Post9, Post10, Post10a, Post11, Post12,
                   Post13, Post13a, Post14, Post15, Post16]
 
@@ -324,14 +323,14 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
                Post1, 1.8,
                Post2, 1.9,
                Post3, 1.8,
-               Post4, 1.5,
-               Post5, 1.9,
+               Post4, 2.1,
+               #Post5, 1,
                Post6, 1.3,
                Post7, 1.8,
                Post8, 0.7,
                Post9, 2,
-               Post10, 3,
-               Post11, 0.7,
+               Post10, 2.6,
+               Post11, 1,
                Post12, 1.75,
                Post13, 1.8,
                Post14, 1.7,
@@ -341,16 +340,15 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
                Post1, 1.8,
                Post2, 1.9,
                Post3, 1.8,
-               Post4, 1.5,
-               Post5, 1.4,
-               Post5a, 2,
+               Post4, 1.4,
+               #Post5, 1.5,
+               Post5a, 1.7,
                Post6, 1.3,
                Post7, 1.8,
                Post8, 0.7,
                Post9, 2,
-               Post10, 0.5,
-               Post10a, 2.5,
-               Post11, 0.7,
+               Post10, 2.6,
+               Post11, 1,
                Post12, 1.75,
                Post13, 1.8,
                Post14, 1.7,
@@ -360,16 +358,16 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
                Post1, 1.8,
                Post2, 1.9,
                Post3, 1.8,
-               Post4, 1.5,
-               Post5, 1.4,
-               Post5a, 2,
+               Post4, 1.4,
+               #Post5, 1.5,
+               Post5a, 1.7,
                Post6, 1.3,
                Post7, 1.8,
                Post8, 0.7,
                Post9, 2,
-               Post10, 0.5,
-               Post10a, 2.5,
-               Post11, 0.7,
+               Post10, 1.4,
+               Post10a, 2,
+               Post11, 1,
                Post12, 1.75,
                Post13, 1.6,
                Post13a, 1,
@@ -431,4 +429,4 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     plotActivityStats(Activities, title)
 
 # Run simulation (#Runs, #VTeams, #STeams, #OBTeams)
-simulate(100, 18, 9, 20)
+simulate(100, 18, 9, 21)
