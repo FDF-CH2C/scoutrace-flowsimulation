@@ -292,88 +292,85 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     """
 
     Post0 = Activity(3, 10, 13, "Startpost")
-    Post1 = Activity(6, 15, 20, "Post1")    
-    Post2 = Activity(4, 15, 20, "Post2")
-    Post3 = Activity(3, 10, 15, "Post3")
-    Post4 = Activity(6, 15, 25, "Post4")
-    #Post5 = Activity(4, 15, 25, "Post5")
-    Post5a = Activity(6, 12, 15, "Post5a")
-    Post6 = Activity(6, 20, 30, "Post6")
-    Post7 = Activity(4, 13, 18, "Post7")
-    Post8 = Activity(4, 15, 20, "Post8")
-    Post9 = Activity(99, 60, 70, "Post9")
-    Post10 = Activity(6, 20, 25, "Post10")
-    Post10a = Activity(3, 10, 15, "Post10a")
-    Post11 = Activity(5, 10, 15, "Post11")
-    Post12 = Activity(4, 15, 20, "Post12")
-    Post13 = Activity(3, 10, 15, "Post13")
-    Post13a = Activity(5, 10, 15, "Post13a")
-    Post14 = Activity(3, 10, 15, "Post14")
-    Post15 = Activity(8, 15, 30, "Post15")
-    Post16 = Activity(99, None, None, "Mål")
+    Post1 = Activity(6, 20, 40, "Jolle")    
+    Post2 = Activity(4, 10, 15, "Strand")
+    Post3 = Activity(3, 10, 15, "Karts")
+    Post3a = Activity(3, 10, 15, "Planter")
+    Post4 = Activity(6, 15, 25, "Natur")
+    Post5 = Activity(99, 60, 70, "Mad")
+    Post6 = Activity(6, 20, 30, "Tons")
+    Post6a = Activity(99, 10, 15, "Post6a -Død")
+    Post6b = Activity(99, 10, 15, "Post6b - Død")
+    Post7 = Activity(4, 13, 18, "Græshopper")
+    Post7a = Activity(3, 10, 15, "Klatring")
+    Post8 = Activity(4, 15, 20, "Olsenbanden")
+    Post9 = Activity(4, 10, 15, "FHJ")
+    Post9a = Activity(3, 10, 15, "Stød")
+    Post10 = Activity(6, 20, 25, "Lys")
+    Post11 = Activity(5, 10, 15, "Dukketeater")
+    Post12 = Activity(4, 15, 20, "Post12?")
+    Post13 = Activity(3, 10, 15, "Forbudt")
+    Post14 = Activity(99, None, None, "Mål")
 
-    Activities = [Post0, Post1, Post2, Post3, Post4, Post5a, Post6,
-                  Post7, Post8, Post9, Post10, Post10a, Post11, Post12,
-                  Post13, Post13a, Post14, Post15, Post16]
+
+    Activities = [Post0, Post1, Post2, Post3, Post3a, Post4, Post5, Post6, Post6a, Post6b, Post7, Post7a,
+                  Post8, Post9, Post9a, Post10, Post11, Post12, Post13, Post14]
 
     """
     Link activities [act1, distance1, act2, distance2, ...]
     """
-    CourseV = [Post0, 0.9,
-               Post1, 1.8,
-               Post2, 1.9,
-               Post3, 1.8,
-               Post4, 2.1,
-               #Post5, 1,
-               Post6, 1.3,
-               Post7, 1.8,
-               Post8, 0.7,
-               Post9, 2,
-               Post10, 2.6,
-               Post11, 1,
-               Post12, 1.75,
-               Post13, 1.8,
-               Post14, 1.7,
-               Post15, 0.5,
-               Post16]
-    CourseS = [Post0, 0.9,
-               Post1, 1.8,
-               Post2, 1.9,
-               Post3, 1.8,
-               Post4, 1.4,
-               #Post5, 1.5,
-               Post5a, 1.7,
-               Post6, 1.3,
-               Post7, 1.8,
-               Post8, 0.7,
-               Post9, 2,
-               Post10, 2.6,
-               Post11, 1,
-               Post12, 1.75,
-               Post13, 1.8,
-               Post14, 1.7,
-               Post15, 0.5,
-               Post16]
-    CourseOB = [Post0, 0.9,
-               Post1, 1.8,
-               Post2, 1.9,
-               Post3, 1.8,
-               Post4, 1.4,
-               #Post5, 1.5,
-               Post5a, 1.7,
-               Post6, 1.3,
-               Post7, 1.8,
-               Post8, 0.7,
-               Post9, 2,
-               Post10, 1.4,
-               Post10a, 2,
-               Post11, 1,
-               Post12, 1.75,
-               Post13, 1.6,
-               Post13a, 1,
-               Post14, 1.7,
-               Post15, 0.5,
-               Post16]
+    CourseV = [Post0, 2.7,
+               Post1, 3,
+               Post2, 2.7,
+               Post3, 1.5,
+               Post4, 3.2,
+               Post5, 1,
+               Post6, 1.7,
+               Post7, 0.8,
+               Post8, 2.1,
+               Post9, 1.9,
+               Post10, 1,
+               Post11, 0.8,
+               Post12, 1.6,
+               Post13, 1.2,
+               Post14]
+    CourseS = [Post0, 2.7,
+               Post1, 3,
+               Post2, 2.7,
+               Post3, 2.2,
+               Post3a, 1.1,
+               Post4, 3.2,
+               Post5, 1,
+               Post6, 1.7,
+               Post7, 0.2,
+               Post7a, 0.9,
+               Post8, 2.1,
+               Post9, 1.9,
+               Post10, 1,
+               Post11, 0.8,
+               Post12, 1.6,
+               Post13, 1.2,
+               Post14]
+    CourseOB = [Post0, 2.7,
+               Post1, 3,
+               Post2, 2.7,
+               Post3, 2.2,
+               Post3a, 1.1,
+               Post4, 3.2,
+               Post5, 1,
+               Post6, 1.1,
+               Post6a, 1.2,
+               Post6b, 1.8,
+               Post7, 0.2,
+               Post7a, 0.9,
+               Post8, 2.1,
+               Post9, 1.9,
+               Post9a, 2.2,
+               Post10, 1,
+               Post11, 0.8,
+               Post12, 1.6,
+               Post13, 1.2,
+               Post14]
 
     print(printCourse(CourseV, "Væbnerrute", noVTeams))
     print(printCourse(CourseS, "Seniorrute", noSTeams))
@@ -429,4 +426,4 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     plotActivityStats(Activities, title)
 
 # Run simulation (#Runs, #VTeams, #STeams, #OBTeams)
-simulate(100, 18, 9, 21)
+simulate(100, 20, 10, 20)
