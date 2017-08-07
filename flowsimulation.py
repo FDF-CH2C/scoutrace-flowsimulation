@@ -177,7 +177,7 @@ def plotActivityStats(activities, title):
     # Plot activity start/end times as Gantt chart
     fig = pyplot.figure()
     figgantt = fig.add_subplot(111)
-    y = 0
+    y = len(dataStartEnd) - 1
     xmin = tEnd
     xmax = tStart
     for startList, endList in dataStartEnd:
@@ -193,7 +193,7 @@ def plotActivityStats(activities, title):
         # 50th percentile
         figgantt.barh(y, endList[3] - startList[3], left=startList[3],
                       alpha=0.3, edgecolor='red')
-        y = y + 1
+        y = y - 1
         xmin = min(startList[0], xmin)
         xmax = max(endList[0], xmax)
 
@@ -201,7 +201,7 @@ def plotActivityStats(activities, title):
     patch10_90 = mpatches.Patch(alpha=0.45, label='90%')
     patch25_75 = mpatches.Patch(alpha=0.6, label='75%')
     patch50 = mpatches.Patch(alpha=0.75, edgecolor='red', label='50%')
-    pyplot.legend(handles=[patch5_95, patch10_90, patch25_75, patch50], loc=2)
+    pyplot.legend(handles=[patch5_95, patch10_90, patch25_75, patch50], loc=1)
 
     labelsy = pyplot.yticks(numpy.arange(0.5, len(activities) + 0.5), labels)
     pyplot.setp(labelsy)
@@ -292,24 +292,24 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     """
 
     Post0 = Activity(3, 10, 13, "Startpost")
-    Post1 = Activity(6, 20, 40, "Jolle")    
+    Post1 = Activity(6, 20, 30, "Jolle")    
     Post2 = Activity(4, 10, 15, "Strand")
-    Post3 = Activity(3, 10, 15, "Karts")
+    Post3 = Activity(4, 10, 15, "Karts")
     Post3a = Activity(3, 10, 15, "Planter")
-    Post4 = Activity(6, 15, 25, "Natur")
+    Post4 = Activity(4, 10, 15, "Natur")
     Post5 = Activity(99, 60, 70, "Mad")
-    Post6 = Activity(6, 20, 30, "Tons")
+    Post6 = Activity(6, 15, 25, "Tons")
     Post6a = Activity(99, 10, 15, "Post6a -Død")
     Post6b = Activity(99, 10, 15, "Post6b - Død")
-    Post7 = Activity(4, 13, 18, "Græshopper")
-    Post7a = Activity(3, 10, 15, "Klatring")
-    Post8 = Activity(4, 15, 20, "Olsenbanden")
-    Post9 = Activity(4, 10, 15, "FHJ")
+    Post7 = Activity(8, 10, 25, "Græshopper")
+    Post7a = Activity(4, 10, 20, "Klatring")
+    Post8 = Activity(3, 10, 15, "Olsenbanden")
+    Post9 = Activity(3, 10, 15, "FHJ")
     Post9a = Activity(3, 10, 15, "Stød")
-    Post10 = Activity(6, 20, 25, "Lys")
-    Post11 = Activity(5, 10, 15, "Dukketeater")
-    Post12 = Activity(4, 15, 20, "Post12?")
-    Post13 = Activity(3, 10, 15, "Forbudt")
+    Post10 = Activity(6, 10, 15, "Lys")
+    Post11 = Activity(3, 10, 15, "Dukketeater")
+    Post12 = Activity(3, 15, 20, "Post12?")
+    Post13 = Activity(8, 10, 25, "Forbudt")
     Post14 = Activity(99, None, None, "Mål")
 
 
@@ -426,4 +426,4 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     plotActivityStats(Activities, title)
 
 # Run simulation (#Runs, #VTeams, #STeams, #OBTeams)
-simulate(100, 20, 10, 20)
+simulate(10, 20, 10, 20)
