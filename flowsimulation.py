@@ -14,9 +14,9 @@ tStart = 8 * 60             # 08:00
 tStartSimul = 3             # No. of teams to start simultaneously
 tStartInterval = 15         # Time between starting teams
 tEnd = 32 * 60              # 08:00 next day
-minSpeed = 2                # km/h
-minSpeedOB = 2.5            # km/h
-maxSpeed = 4                # km/h
+minSpeed = 1.8              # km/h
+minSpeedOB = 1.8            # km/h
+maxSpeed = 4.5              # km/h
 maxSpeedOB = 5              # km/h
 r = random.Random(3823)
 
@@ -165,12 +165,15 @@ def plotActivityStats(activities, title):
 
     # Plot total wait time/activity as boxplot
     # figwait = fig.add_subplot(211, label="Samlet ventetid pr. post")
-    pyplot.boxplot(dataWait, labels=labels, vert=False)
+    # TODO: This is apparently showing unaggregated data
+    """
+    pyplot.boxplot(dataWait[::-1], labels=labels[::-1], vert=False)
     pyplot.title("Ventetid pr. post (%d gennemløb)" % noOfRuns)
     pyplot.show()
-
+    """
+    
     # Plot max queue/activity as boxplot
-    pyplot.boxplot(dataMaxQueue, labels=labels, vert=False)
+    pyplot.boxplot(dataMaxQueue[::-1], labels=labels[::-1], vert=False)
     pyplot.title("Længste kø pr. post (%d gennemløb)" % noOfRuns)
     pyplot.show()
 
@@ -203,7 +206,7 @@ def plotActivityStats(activities, title):
     patch50 = mpatches.Patch(alpha=0.75, edgecolor='red', label='50%')
     pyplot.legend(handles=[patch5_95, patch10_90, patch25_75, patch50], loc=1)
 
-    labelsy = pyplot.yticks(numpy.arange(0.5, len(activities) + 0.5), labels)
+    labelsy = pyplot.yticks(numpy.arange(0.5, len(activities) + 0.5), labels[::-1])
     pyplot.setp(labelsy)
     figgantt.set_xlim(xmin, xmax)
     figgantt.xaxis.set_major_locator(pyplot.MultipleLocator(60))
@@ -303,12 +306,12 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     Post6b = Activity(99, 10, 15, "Post6b - Død")
     Post7 = Activity(8, 10, 25, "Græshopper")
     Post7a = Activity(4, 10, 20, "Klatring")
-    Post8 = Activity(3, 10, 15, "Olsenbanden")
-    Post9 = Activity(3, 10, 15, "FHJ")
-    Post9a = Activity(3, 10, 15, "Stød")
+    Post8 = Activity(4, 10, 15, "Olsenbanden")
+    Post9 = Activity(4, 10, 15, "FHJ")
+    Post9a = Activity(4, 10, 15, "Stød")
     Post10 = Activity(6, 10, 15, "Lys")
-    Post11 = Activity(3, 10, 15, "Dukketeater")
-    Post12 = Activity(3, 15, 20, "Post12?")
+    Post11 = Activity(4, 10, 15, "Dukketeater")
+    Post12 = Activity(4, 15, 20, "Post12?")
     Post13 = Activity(8, 10, 25, "Forbudt")
     Post14 = Activity(99, None, None, "Mål")
 
