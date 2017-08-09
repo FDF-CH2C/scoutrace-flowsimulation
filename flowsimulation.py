@@ -14,8 +14,8 @@ tStart = 8 * 60             # 08:00
 tStartSimul = 3             # No. of teams to start simultaneously
 tStartInterval = 15         # Time between starting teams
 tEnd = 32 * 60              # 08:00 next day
-minSpeed = 1.8              # km/h
-minSpeedOB = 1.8            # km/h
+minSpeed = 2              # km/h
+minSpeedOB = 2            # km/h
 maxSpeed = 4.5              # km/h
 maxSpeedOB = 5              # km/h
 r = random.Random(3823)
@@ -96,14 +96,14 @@ class Team:
         self.endTime = 0
 
     def start(self, env):
+        baseSpeed = r.uniform(self.minSpeed, self.maxSpeed)
         for element in self.course:
             if isinstance(element, numbers.Number):
                 # TODO: Better model for speed, perhaps as function of time of
                 # day?
-                walkingTime = r.uniform(element / self.minSpeed,
-                                        element / self.maxSpeed) * 60
-                # print "Team %s walks %d km in %s" % (self.name,
-                # element, formatTime(walkingTime))
+                walkingTime = (element / baseSpeed) * 60
+                # print("Team %s walks %d km in %s" % (self.name,
+                # element, formatTime(walkingTime)))
                 yield self.env.timeout(walkingTime)
 
             if type(element) is Activity:
@@ -416,13 +416,12 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
                  minMaxAvgTime(act.accFirstTeamStart),
                  minMaxAvgTime(act.accLastTeamEnd)))
     
-    """
+    
     for t in Teams:
         print("%s: Start=%s, End=%s, Total wait=%s, avg. wait/run=%s"
               % (t.name, formatTime(t.startTime), minMaxAvgTime(t.accEndTime),
               minMaxAvgSumPerRun(t.accWaits), minMaxAvgAvgPerRun(t.accWaits)))
-    """
-
+    
     title = printCourse(CourseV, "Væbnerrute",  noVTeams) + "\n"
     title = printCourse(CourseS, "Seniorrute",  noSTeams) + "\n"
     title += printCourse(CourseOB, "OB-rute", noOBTeams)
