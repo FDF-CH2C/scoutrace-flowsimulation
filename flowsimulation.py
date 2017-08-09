@@ -14,8 +14,8 @@ tStart = 8 * 60             # 08:00
 tStartSimul = 3             # No. of teams to start simultaneously
 tStartInterval = 15         # Time between starting teams
 tEnd = 32 * 60              # 08:00 next day
-minSpeed = 1.8              # km/h
-minSpeedOB = 1.8            # km/h
+minSpeed = 2                # km/h
+minSpeedOB = 2              # km/h
 maxSpeed = 4.5              # km/h
 maxSpeedOB = 5              # km/h
 r = random.Random(3823)
@@ -295,15 +295,15 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     """
 
     Post0 = Activity(3, 10, 13, "Startpost")
-    Post1 = Activity(6, 20, 30, "Jolle")    
+    Post1 = Activity(8, 20, 30, "Jolle")    
     Post2 = Activity(4, 10, 15, "Strand")
     Post3 = Activity(4, 10, 15, "Karts")
     Post3a = Activity(3, 10, 15, "Planter")
     Post4 = Activity(4, 10, 15, "Natur")
     Post5 = Activity(99, 60, 70, "Mad")
     Post6 = Activity(6, 15, 25, "Tons")
-    Post6a = Activity(99, 10, 15, "Post6a -Død")
-    Post6b = Activity(99, 10, 15, "Post6b - Død")
+    Post6a = Activity(99, 5, 10, "Post6a -Død")
+    Post6b = Activity(99, 5, 10, "Post6b - Død")
     Post7 = Activity(8, 10, 25, "Græshopper")
     Post7a = Activity(4, 10, 20, "Klatring")
     Post8 = Activity(4, 10, 15, "Olsenbanden")
