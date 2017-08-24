@@ -181,7 +181,7 @@ def plotActivityStats(activities, title):
     fig = pyplot.figure()
     figgantt = fig.add_subplot(111)
     y = len(dataStartEnd) - 1
-    xmin = tEnd
+    xmin = tStart
     xmax = tStart
     for startList, endList in dataStartEnd:
         # 5th/95th percentile
@@ -197,7 +197,6 @@ def plotActivityStats(activities, title):
         figgantt.barh(y, endList[3] - startList[3], left=startList[3],
                       alpha=0.3, edgecolor='red')
         y = y - 1
-        xmin = min(startList[0], xmin)
         xmax = max(endList[0], xmax)
 
     patch5_95 = mpatches.Patch(alpha=0.3, label='95%')
