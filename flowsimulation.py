@@ -17,7 +17,7 @@ tEnd = 32 * 60              # 08:00 next day
 # Speeds in km/h
 minSpeed = 2
 minSpeedS = 2
-minSpeedOB = 3
+minSpeedOB = 2.5
 maxSpeed = 4.5
 maxSpeedS = 5
 maxSpeedOB = 5
@@ -307,9 +307,9 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     Post4 = Activity(4, 10, 15, "Karts")
     Post4a = Activity(6, 10, 15, "Planter")
     Post5 = Activity(4, 10, 15, "Natur")
-    Post6 = Activity(4, 10, 20, "Pioner")
+    Post6 = Activity(5, 10, 20, "Pioner")
     Post7 = Activity(99, 60, 70, "Mad")
-    Post8 = Activity(6, 15, 25, "FHJ")
+    Post8 = Activity(4, 10, 15, "FHJ")
     Post8a = Activity(99, 5, 10, "Post8a -Død")
     Post8b = Activity(99, 5, 10, "Post8b - Død")
     Post8c = Activity(4, 10, 20, "Klatring")
