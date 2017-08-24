@@ -10,14 +10,17 @@ import numpy
 import matplotlib.pyplot as pyplot
 import matplotlib.patches as mpatches
 
-tStart = 8 * 60             # 08:00
+tStart = 8 * 60              # 08:00
 tStartSimul = 3             # No. of teams to start simultaneously
 tStartInterval = 15         # Time between starting teams
 tEnd = 32 * 60              # 08:00 next day
-minSpeed = 2                # km/h
-minSpeedOB = 2              # km/h
-maxSpeed = 4.5              # km/h
-maxSpeedOB = 5              # km/h
+# Speeds in km/h
+minSpeed = 2
+minSpeedS = 2
+minSpeedOB = 3
+maxSpeed = 4.5
+maxSpeedS = 5
+maxSpeedOB = 5
 r = random.Random(3823)
 
 
@@ -85,8 +88,12 @@ class Team:
             self.minSpeed = minSpeed
             self.maxSpeed = maxSpeed
         else:
-            self.minSpeed = minSpeedOB
-            self.maxSpeed = maxSpeedOB
+            if teamType == "S":
+                self.minSpeed = minSpeedS
+                self.maxSpeed = maxSpeedS
+            else:
+                self.minSpeed = minSpeedOB
+                self.maxSpeed = maxSpeedOB
         self.accWaits = []
         self.accEndTime = []
 
@@ -426,4 +433,4 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     plotActivityStats(Activities, title)
 
 # Run simulation (#Runs, #VTeams, #STeams, #OBTeams)
-simulate(50, 20, 10, 0)
+simulate(50, 20, 10, 20)
