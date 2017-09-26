@@ -147,7 +147,7 @@ def plotActivityStats(activities, title):
     noOfRuns = len(activities[0].accWaits)
     for a in activities:
         percStart = numpy.percentile(a.accFirstTeamStart, [5, 10, 25, 50])
-        percEnd = numpy.percentile(a.accLastTeamEnd, [75, 90, 95, 50])
+        percEnd = numpy.percentile(a.accLastTeamEnd, [95, 90, 75, 50])
         dataStartEnd.append([percStart, percEnd])
         dataMaxQueue.append(a.accMaxQueue)
         actWaits = []
@@ -296,34 +296,27 @@ def start(env, teams, activities):
 
 def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     """
-    Setup course
+    Setup course - insert own course here!
     Activity: capacity, min, max, name
     """
 
     Post0 = Activity(3, 10, 13, "Startpost")
-    Post1 = Activity(8, 10, 25, "Græshopper")
-    Post2 = Activity(8, 20, 30, "Jolle")    
-    Post3 = Activity(4, 10, 15, "Strand")
-    Post4 = Activity(4, 10, 15, "Karts")
-    Post4a = Activity(6, 10, 15, "Planter")
-    Post5 = Activity(4, 10, 15, "Natur")
-    Post6 = Activity(5, 10, 20, "Pioner")
-    Post7 = Activity(99, 60, 70, "Mad")
-    Post8 = Activity(4, 10, 15, "FHJ")
-    Post8a = Activity(99, 5, 10, "Post8a -Død")
-    Post8b = Activity(99, 5, 10, "Post8b - Død")
-    Post8c = Activity(4, 10, 20, "Klatring")
-    Post9 = Activity(4, 10, 15, "Olsenbanden")
-    Post10 = Activity(4, 10, 15, "Logik")
-    Post10a = Activity(4, 10, 15, "Stød")
-    Post11 = Activity(6, 10, 15, "Lys")
-    Post12 = Activity(4, 10, 15, "Dukketeater")
-    Post13 = Activity(8, 10, 25, "Forbudt")
-    Post14 = Activity(99, None, None, "Mål")
+    Post1 = Activity(5, 10, 20, "Post1")
+    Post2 = Activity(6, 20, 30, "Post2")    
+    Post3 = Activity(4, 10, 15, "Post3")
+    Post4 = Activity(4, 10, 15, "Post4")
+    Post5 = Activity(4, 10, 15, "Post5")
+    Post6 = Activity(5, 10, 20, "Post6")
+    PostM = Activity(99, 60, 70, "Mad")
+    Post7 = Activity(4, 10, 15, "Post7")
+    Post8 = Activity(4, 10, 20, "Post8")
+    Post9 = Activity(4, 10, 15, "Post9")
+    Post10 = Activity(8, 15, 30, "Post10")
+    PostMaal = Activity(99, None, None, "Mål")
 
 
-    Activities = [Post0, Post1, Post2, Post3, Post4, Post4a, Post5, Post6, Post7,
-                  Post8, Post8a, Post8b, Post8c, Post9, Post10, Post10a, Post11, Post12, Post13, Post14]
+    Activities = [Post0, Post1, Post2, Post3, Post4, Post5, Post6, PostM,
+                  Post7, Post8, Post9, Post10, PostMaal]
 
     """
     Link activities [act1, distance1, act2, distance2, ...]
@@ -331,55 +324,38 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     CourseV = [Post0, 1,
                Post1, 1.7,
                Post2, 3,
-               Post3, 2.7,
                Post4, 1.5,
                Post5, 3.2,
-               Post6, 0,
-               Post7, 0.9,
-               Post8, 2.6,
+               PostM, 0.9,
+               Post7, 2.1,
                Post9, 2.0,
                Post10, 1.9,
-               Post11, 1.8,               
-               Post12, 1.7,
-               Post13, 1.2,
-               Post14]
+               PostMaal]
     CourseS = [Post0, 1,
                Post1, 1.7,
                Post2, 3,
                Post3, 2.7,
-               Post4, 2.2,
-               Post4a, 1.1,
-               Post5, 3.2,
+               Post4, 1.5,
                Post6, 0,
-               Post7, 0.9,
-               Post8, 2.1,
-               Post8c, 0.9,
+               PostM, 0.9,
+               Post7, 2.1,
                Post9, 2.0,
                Post10, 1.9,
-               Post11, 1.8,
-               Post12, 1.7,
-               Post13, 1.2,
-               Post14]
+               PostMaal]
     CourseOB = [Post0, 1,
                Post1, 1.7,
                Post2, 3,
                Post3, 2.7,
-               Post4, 2.2,
-               Post4a, 1.1,
+               Post4, 1.5,
                Post5, 3.2,
                Post6, 0,
-               Post7, 0.9,
-               Post8, 1.2,
-               Post8a, 1.2,
-               Post8b, 2,
-               Post8c, 0.9,
+               PostM, 0.9,
+               Post7, 2.1,
+               Post8, 0.9,
                Post9, 2.0,
-               Post10, 1.8,
-                Post10a, 2.1,
-               Post11, 1.8,
-               Post12, 1.7,
-               Post13, 1.2,
-               Post14]
+               Post10, 1.9,
+               PostMaal]
+    """ Setup course END """
 
     print(printCourse(CourseV, "Væbnerrute", noVTeams))
     print(printCourse(CourseS, "Seniorrute", noSTeams))
