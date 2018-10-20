@@ -11,7 +11,9 @@ import matplotlib.pyplot as pyplot
 import matplotlib.patches as mpatches
 
 tStart = 8 * 60              # 08:00
-tStartSimul = 3             # No. of teams to start simultaneously
+tStartSimulV = 3             # No. of teams to start simultaneously
+tStartSimulS = 4
+tStartSimulOB = 4
 tStartInterval = 15         # Time between starting teams
 tEnd = 32 * 60              # 08:00 next day
 # Speeds in km/h
@@ -182,6 +184,7 @@ def plotActivityStats(activities, title):
     # Plot max queue/activity as boxplot
     pyplot.boxplot(dataMaxQueue[::-1], labels=labels[::-1], vert=False)
     pyplot.title("Længste kø pr. post (%d gennemløb)" % noOfRuns)
+    pyplot.grid(True)
     pyplot.show()
 
     # Plot activity start/end times as Gantt chart
@@ -189,20 +192,20 @@ def plotActivityStats(activities, title):
     figgantt = fig.add_subplot(111)
     y = len(dataStartEnd) - 1
     xmin = tStart
-    xmax = tStart
+    xmax = tEnd
     for startList, endList in dataStartEnd:
         # 5th/95th percentile
         figgantt.barh(y, endList[0] - startList[0], left=startList[0],
-                      alpha=0.3)
+                      alpha=0.3, color='blue')
         # 10th/90th percentile
         figgantt.barh(y, endList[1] - startList[1], left=startList[1],
-                      alpha=0.3)
+                      alpha=0.3, color='blue')
         # 25th/75th percentile
         figgantt.barh(y, endList[2] - startList[2], left=startList[2],
-                      alpha=0.3)
+                      alpha=0.3, color='blue')
         # 50th percentile
         figgantt.barh(y, endList[3] - startList[3], left=startList[3],
-                      alpha=0.3, edgecolor='red')
+                      alpha=0.3, edgecolor='red', color='blue')
         y = y - 1
         xmax = max(endList[0], xmax)
 
@@ -219,6 +222,7 @@ def plotActivityStats(activities, title):
     figgantt.xaxis.set_major_formatter(
         pyplot.FuncFormatter(lambda x, pos: formatTime(x)))
     figgantt.set_title("Åbne- og lukketider pr. post")
+    figgantt.grid(True)
     pyplot.show()
 
 
@@ -367,6 +371,7 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
 
     teamType = "V"
     course = CourseV
+    tStartSimul = tStartSimulV
     for j in range(noVTeams + noSTeams + noOBTeams):
         Teams.append(Team("Hold %d" % j, teamType, course, startTime))
         if j % tStartSimul == tStartSimul - 1:
@@ -374,9 +379,11 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
         if j == noVTeams - 1:  # We have created last VTeam - switch to S
             teamType = "S"
             course = CourseS
+            tStartSimul = tStartSimulS
         if j == noVTeams + noSTeams - 1:  # We have created last STeam - switch to OB
             teamType = "OB"
             course = CourseOB
+            tStartSimul = tStartSimulOB
         j += 1
 
     print("Running %d simulations" % noOfRuns)
@@ -409,4 +416,4 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     plotActivityStats(Activities, title)
 
 # Run simulation (#Runs, #VTeams, #STeams, #OBTeams)
-simulate(50, 20, 10, 20)
+simulate(50, 25, 14, 23)
