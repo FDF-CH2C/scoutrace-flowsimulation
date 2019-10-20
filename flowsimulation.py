@@ -11,6 +11,7 @@ import matplotlib.pyplot as pyplot
 import matplotlib.patches as mpatches
 
 tStart = 8 * 60              # 08:00
+tStartS = 9 * 60              # 08:00
 tStartSimulV = 3             # No. of teams to start simultaneously
 tStartSimulS = 4
 tStartSimulOB = 4
@@ -380,6 +381,7 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
             teamType = "S"
             course = CourseS
             tStartSimul = tStartSimulS
+            startTime = tStartS
         if j == noVTeams + noSTeams - 1:  # We have created last STeam - switch to OB
             teamType = "OB"
             course = CourseOB
@@ -411,7 +413,7 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
               minMaxAvgSumPerRun(t.accWaits), minMaxAvgAvgPerRun(t.accWaits)))
     
     title = printCourse(CourseV, "Væbnerrute",  noVTeams) + "\n"
-    title = printCourse(CourseS, "Seniorrute",  noSTeams) + "\n"
+    title += printCourse(CourseS, "Seniorrute",  noSTeams) + "\n"
     title += printCourse(CourseOB, "OB-rute", noOBTeams)
     plotActivityStats(Activities, title)
 
