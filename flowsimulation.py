@@ -11,7 +11,7 @@ import matplotlib.pyplot as pyplot
 import matplotlib.patches as mpatches
 
 tStart = 8 * 60              # 08:00
-tStartS = 9 * 60              # 08:00
+tStartS = 9 * 60              # 09:00
 tStartSimulV = 3             # No. of teams to start simultaneously
 tStartSimulS = 4
 tStartSimulOB = 4
@@ -191,7 +191,7 @@ def plotActivityStats(activities, title):
     # Plot activity start/end times as Gantt chart
     fig = pyplot.figure()
     figgantt = fig.add_subplot(111)
-    y = len(dataStartEnd) - 1
+    y = len(dataStartEnd) - 0.5
     xmin = tStart
     xmax = tEnd
     for startList, endList in dataStartEnd:
@@ -207,7 +207,7 @@ def plotActivityStats(activities, title):
         # 50th percentile
         figgantt.barh(y, endList[3] - startList[3], left=startList[3],
                       alpha=0.3, edgecolor='red', color='blue')
-        y = y - 1
+        y -= 1
         xmax = max(endList[0], xmax)
 
     patch5_95 = mpatches.Patch(alpha=0.3, label='95%')
@@ -374,7 +374,7 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     course = CourseV
     tStartSimul = tStartSimulV
     for j in range(noVTeams + noSTeams + noOBTeams):
-        Teams.append(Team("Hold %d" % j, teamType, course, startTime))
+        Teams.append(Team("Hold %d (%s)" % (j,teamType), teamType, course, startTime))
         if j % tStartSimul == tStartSimul - 1:
             startTime += tStartInterval
         if j == noVTeams - 1:  # We have created last VTeam - switch to S
@@ -388,6 +388,7 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
             tStartSimul = tStartSimulOB
         j += 1
 
+    Teams.sort(key=lambda x: x.startTime)
     print("Running %d simulations" % noOfRuns)
     for i in range(noOfRuns):
         env = simpy.Environment()
@@ -418,4 +419,4 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     plotActivityStats(Activities, title)
 
 # Run simulation (#Runs, #VTeams, #STeams, #OBTeams)
-simulate(50, 25, 14, 23)
+simulate(50, 30, 13, 22)
