@@ -12,18 +12,13 @@ import matplotlib.patches as mpatches
 
 tStart = 8 * 60              # 08:00
 tStartS = 9 * 60              # 09:00
-tStartSimulV = 3             # No. of teams to start simultaneously
-tStartSimulS = 4
-tStartSimulOB = 4
+# No. of teams to start simultaneously
+tStartSimul = {"V":3, "S":4, "OB":4}
 tStartInterval = 15         # Time between starting teams
 tEnd = 32 * 60              # 08:00 next day
 # Speeds in km/h
-minSpeed = 2
-minSpeedS = 2
-minSpeedOB = 2.5
-maxSpeed = 4.5
-maxSpeedS = 5
-maxSpeedOB = 5
+meanSpeed = {"V": 2.3, "S":2.8, "OB": 3.0} 
+stdevSpeed = {"V": 0.35, "S":0.25, "OB":0.3}
 r = random.Random(3823)
 
 
@@ -87,21 +82,12 @@ class Team:
         self.teamType = teamType  # TODO: Do we need to save this?
         self.course = course
         self.startTime = startTime
-        if teamType == "V":
-            self.minSpeed = minSpeed
-            self.maxSpeed = maxSpeed
-        else:
-            if teamType == "S":
-                self.minSpeed = minSpeedS
-                self.maxSpeed = maxSpeedS
-            else:
-                self.minSpeed = minSpeedOB
-                self.maxSpeed = maxSpeedOB
         self.accWaits = []
         self.accEndTime = []
 
-    def setup(self, env):
+    def setup(self, env): # Invoked for each run
         self.env = env
+        self.speed = r.normalvariate(meanSpeed[self.teamType], stdevSpeed[self.teamType])
         self.waits = []
         self.endTime = 0
 
@@ -110,10 +96,8 @@ class Team:
             if isinstance(element, numbers.Number):
                 # TODO: Better model for speed, perhaps as function of time of
                 # day?
-                walkingTime = r.uniform(element / self.minSpeed,
-                                        element / self.maxSpeed) * 60
-                # print "Team %s walks %d km in %s" % (self.name,
-                # element, formatTime(walkingTime))
+                walkingTime = (element / self.speed) * 60
+                #print("%s walks %.1f km in %s" % (self.name, element, formatTime(walkingTime)))
                 yield self.env.timeout(walkingTime)
 
             if type(element) is Activity:
@@ -186,7 +170,7 @@ def plotActivityStats(activities, title):
     pyplot.boxplot(dataMaxQueue[::-1], labels=labels[::-1], vert=False)
     pyplot.title("Længste kø pr. post (%d gennemløb)" % noOfRuns)
     pyplot.grid(True)
-    pyplot.show()
+    #pyplot.show()
 
     # Plot activity start/end times as Gantt chart
     fig = pyplot.figure()
@@ -305,87 +289,120 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     Activity: capacity, min, max, name
     """
 
-    Post0 = Activity(3, 10, 13, "Startpost")
-    Post1 = Activity(5, 10, 20, "Post1")
-    Post2 = Activity(6, 20, 30, "Post2")    
-    Post3 = Activity(4, 10, 15, "Post3")
-    Post4 = Activity(4, 10, 15, "Post4")
-    Post5 = Activity(4, 10, 15, "Post5")
-    Post6 = Activity(5, 10, 20, "Post6")
-    PostM = Activity(99, 60, 70, "Mad")
-    Post7 = Activity(4, 10, 15, "Post7")
-    Post8 = Activity(4, 10, 20, "Post8")
-    Post9 = Activity(4, 10, 15, "Post9")
-    Post10 = Activity(8, 15, 30, "Post10")
+    Post0 = Activity(20, 10, 13, "Startpost")
+    Post0A = Activity(5, 10, 15, "Post 0A")
+    Post0B = Activity(10, 10, 15, "Post 0B")
+    Post1 = Activity(5, 10, 15, "Post1")
+    Post2 = Activity(10, 15, 20, "Post2")    
+    Post2A = Activity(5, 10, 15, "Post2A")
+    Post2B = Activity(5, 10, 15, "Post2B")
+    Post3 = Activity(5, 10, 15, "Post3")
+    Post4 = Activity(5, 10, 15, "Post4")
+    Post5 = Activity(5, 10, 15, "Post5")
+    Post6 = Activity(20, 10, 25, "Post6")
+    Post7 = Activity(5, 10, 15, "Post7")
+    Post8 = Activity(6, 10, 15, "Post8")
+    Post9 = Activity(99, 45, 60, "Mad")
+    Post10 = Activity(5, 10, 15, "Post10")
+    Post11 = Activity(5, 10, 15, "Post11")
+    Post12 = Activity(5, 10, 15, "Post12")
+    Post13 = Activity(5, 10, 15, "Post13")
+    Post13A = Activity(5, 10, 15, "Post13A")
+    Post14 = Activity(5, 10, 15, "Post14")
+    Post15 = Activity(10, 10, 20, "Post15")
     PostMaal = Activity(99, None, None, "Mål")
 
 
-    Activities = [Post0, Post1, Post2, Post3, Post4, Post5, Post6, PostM,
-                  Post7, Post8, Post9, Post10, PostMaal]
+    Activities = [Post0A, Post0B, Post0, Post1, Post2, Post2A, Post2B, Post3, Post4,
+                  Post5, Post6, Post7, Post8, Post9, Post10, Post11,
+                  Post12, Post13, Post13A, Post14, Post15, PostMaal]
 
     """
     Link activities [act1, distance1, act2, distance2, ...]
     """
-    CourseV = [Post0, 1,
-               Post1, 1.7,
-               Post2, 3,
-               Post4, 1.5,
-               Post5, 3.2,
-               PostM, 0.9,
-               Post7, 2.1,
-               Post9, 2.0,
-               Post10, 1.9,
-               PostMaal]
-    CourseS = [Post0, 1,
-               Post1, 1.7,
-               Post2, 3,
-               Post3, 2.7,
-               Post4, 1.5,
-               Post6, 0,
-               PostM, 0.9,
-               Post7, 2.1,
-               Post9, 2.0,
-               Post10, 1.9,
-               PostMaal]
-    CourseOB = [Post0, 1,
-               Post1, 1.7,
-               Post2, 3,
-               Post3, 2.7,
-               Post4, 1.5,
-               Post5, 3.2,
-               Post6, 0,
-               PostM, 0.9,
-               Post7, 2.1,
-               Post8, 0.9,
-               Post9, 2.0,
-               Post10, 1.9,
-               PostMaal]
+    course = {"V":[Post0, 0.6,
+               Post1, 1.9,
+               Post2, 2.5,
+               Post3, 1.3,
+               Post4, 1.9,
+               Post5, 0.8,
+               Post6, 1.5,
+               Post7, 1.2,
+               Post8, 1.3,
+               Post9, 1.5,
+               Post10, 2.3,
+               Post11, 1.1,
+               Post12, 1.3,
+               Post13, 1.4,
+               Post14, 1.2,
+               Post15, 1.4,
+               PostMaal],
+              "S":[Post0, 1.7,
+               Post0A, 0.8,
+               Post0B, 1.6,
+               Post1, 1.9,
+               Post2, 2.8,
+               Post2A, 0.9,
+               Post2B, 0.9,
+               Post3, 1.3,
+               Post4, 1.9,
+               Post5, 0.8,
+               Post6, 1.5,
+               Post7, 1.2,
+               Post8, 1.3,
+               Post9, 1.5,
+               Post10, 2.3,
+               Post11, 1.1,
+               Post12, 1.3,
+               Post13, 1.4,
+               Post14, 1.2,
+               Post15, 1.4,
+               PostMaal],
+              "OB":[Post0, 1.7,
+               Post0B, 0.8,
+               Post0A, 1.6,
+               Post1, 1.9,
+               Post2, 2.8,
+               Post2A, 0.9,
+               Post2B, 0.9,
+               Post3, 1.3,
+               Post4, 1.9,
+               Post5, 0.8,
+               Post6, 1.5,
+               Post7, 1.2,
+               Post8, 1.3,
+               Post9, 1.5,
+               Post10, 2.3,
+               Post11, 1.1,
+               Post12, 1.7,
+               Post13, 2.1,
+               Post13A, 0.6,
+               Post14, 1.2,
+               Post15, 1.4,
+               PostMaal]}
     """ Setup course END """
 
-    print(printCourse(CourseV, "Væbnerrute", noVTeams))
-    print(printCourse(CourseS, "Seniorrute", noSTeams))
-    print(printCourse(CourseOB, "OB-rute", noOBTeams))
+    
+    print(printCourse(course["V"], "Væbnerrute", noVTeams))
+    print(printCourse(course["S"], "Seniorrute", noSTeams))
+    print(printCourse(course["OB"], "OB-rute", noOBTeams))
 
-    # Setup teams - start 3 teams every 15 minutes
+    # Setup teams
     Teams = []
     startTime = tStart
 
     teamType = "V"
-    course = CourseV
-    tStartSimul = tStartSimulV
+    startGroup = tStartSimul[teamType]
     for j in range(noVTeams + noSTeams + noOBTeams):
-        Teams.append(Team("Hold %d (%s)" % (j,teamType), teamType, course, startTime))
-        if j % tStartSimul == tStartSimul - 1:
+        Teams.append(Team("Hold %d (%s)" % (j,teamType), teamType, course[teamType], startTime))
+        if j % startGroup == startGroup - 1:
             startTime += tStartInterval
         if j == noVTeams - 1:  # We have created last VTeam - switch to S
             teamType = "S"
-            course = CourseS
-            tStartSimul = tStartSimulS
             startTime = tStartS
         if j == noVTeams + noSTeams - 1:  # We have created last STeam - switch to OB
             teamType = "OB"
-            course = CourseOB
-            tStartSimul = tStartSimulOB
+        startGroup = tStartSimul[teamType]
         j += 1
 
     Teams.sort(key=lambda x: x.startTime)
@@ -413,9 +430,9 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
               % (t.name, formatTime(t.startTime), minMaxAvgTime(t.accEndTime),
               minMaxAvgSumPerRun(t.accWaits), minMaxAvgAvgPerRun(t.accWaits)))
     
-    title = printCourse(CourseV, "Væbnerrute",  noVTeams) + "\n"
-    title += printCourse(CourseS, "Seniorrute",  noSTeams) + "\n"
-    title += printCourse(CourseOB, "OB-rute", noOBTeams)
+    title = printCourse(course["V"], "Væbnerrute",  noVTeams) + "\n"
+    title += printCourse(course["S"], "Seniorrute",  noSTeams) + "\n"
+    title += printCourse(course["OB"], "OB-rute", noOBTeams)
     plotActivityStats(Activities, title)
 
 # Run simulation (#Runs, #VTeams, #STeams, #OBTeams)
