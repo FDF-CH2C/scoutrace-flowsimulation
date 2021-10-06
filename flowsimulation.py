@@ -13,7 +13,7 @@ import matplotlib.patches as mpatches
 tStart = 8 * 60              # 08:00
 tStartS = 9 * 60              # 09:00
 # No. of teams to start simultaneously
-tStartSimul = {"V":3, "S":3, "OB":3}
+tStartSimul = {"V":3, "S":4, "OB":4}
 tStartInterval = 15        # Time between starting teams
 tEnd = 30 * 60              # 01:00
 # Speeds in km/h
@@ -199,7 +199,7 @@ def plotActivityStats(activities, title):
                         alpha=0.3, color=colorString)
             # 50th percentile
             figgantt.barh(y, endList[3] - startList[3], left=startList[3],
-                        alpha=0.3, edgecolor='red', color=colorString)
+                        alpha=0.3, edgecolor='red', color=colorString, zorder=100)
             y -= 1
             xmax = max(endList[0], xmax)
 
@@ -279,6 +279,14 @@ def minMaxAvgAvgPerRun(listOfLists):
         avgList.append(avg(list))
     return minMaxAvgTime(avgList)
 
+def startCloseTime(act: Activity):
+    allStartTimes = act.accFirstTeamStart["V"] + act.accFirstTeamStart["S"] + act.accFirstTeamStart["OB"]
+    allStartTimes = [i for i in allStartTimes if i] # Remove None values
+    p5StartTime = numpy.percentile(allStartTimes or [0], 5)
+    allCloseTimes = act.accLastTeamEnd["V"] + act.accLastTeamEnd["S"] + act.accLastTeamEnd["OB"]
+    allCloseTimes = [i for i in allCloseTimes if i] # Remove None values
+    p95CloseTime = numpy.percentile(allCloseTimes or [0], 95)
+    return [formatTime(p5StartTime), formatTime(p95CloseTime)]
 
 def start(env, teams, activities):
     for a in activities:
@@ -351,7 +359,9 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
                 Post2, 1.1,
                 Post3, 1.2,
                 Post4, 1.0,
-                Post5, 2.4,
+                Post5, 2.5,
+                Post5A, 2.5, # 6 km på kortet
+                Post5B, 0,
                 Post6, 2.0,
                 PostM, 0,
                 Post7, 2.0,
@@ -401,6 +411,7 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
         if j % startGroup == startGroup - 1:
             startTime += tStartInterval
         if j == noVTeams - 1:  # We have created last VTeam - switch to S
+            j = 0
             teamType = "S"
             startTime = tStartS
         if j == noVTeams + noSTeams - 1:  # We have created last STeam - switch to OB
@@ -420,17 +431,23 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
             a.persistStats()
 
     
-    print("Activities")
+    print("Activities: Start/Close")
     for act in Activities:
-        print("%s: Total wait=%s, avg. wait=%s, Max queue=%s, StartV=%s, EndV=%s, StartS=%s, EndS=%s, StartOB=%s, EndOB=%s"
-              % (act.name, minMaxAvgSumPerRun(act.accWaits),
-                 minMaxAvgAvgPerRun(act.accWaits), minMaxAvg(act.accMaxQueue),
-                 minMaxAvgTime(act.accFirstTeamStart["V"]),
-                 minMaxAvgTime(act.accLastTeamEnd["V"]),
-                 minMaxAvgTime(act.accFirstTeamStart["S"]),
-                 minMaxAvgTime(act.accLastTeamEnd["S"]),
-                 minMaxAvgTime(act.accFirstTeamStart["OB"]),
-                 minMaxAvgTime(act.accLastTeamEnd["OB"])))
+        # print("%s: Total wait=%s, avg. wait=%s, Max queue=%s, StartV=%s, EndV=%s, StartS=%s, EndS=%s, StartOB=%s, EndOB=%s, Start/Close=%s"
+        #       % (act.name, minMaxAvgSumPerRun(act.accWaits),
+        #          minMaxAvgAvgPerRun(act.accWaits), minMaxAvg(act.accMaxQueue),
+        #          minMaxAvgTime(act.accFirstTeamStart["V"]),
+        #          minMaxAvgTime(act.accLastTeamEnd["V"]),
+        #          minMaxAvgTime(act.accFirstTeamStart["S"]),
+        #          minMaxAvgTime(act.accLastTeamEnd["S"]),
+        #          minMaxAvgTime(act.accFirstTeamStart["OB"]),
+        #          minMaxAvgTime(act.accLastTeamEnd["OB"]),
+        #          startCloseTime(act)))
+        startCloseTimes = startCloseTime(act)
+        print("%9s: %s, %s"
+              % (act.name,
+                 startCloseTimes[0],
+                 startCloseTimes[1]))
     
     for t in Teams:
         print("%s: Start=%s, End=%s, Total wait=%s, avg. wait/run=%s"
@@ -443,4 +460,4 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     plotActivityStats(Activities, title)
 
 # Run simulation (#Runs, #VTeams, #STeams, #OBTeams)
-simulate(50, 25, 15, 20)
+simulate(50, 25, 10, 25)
