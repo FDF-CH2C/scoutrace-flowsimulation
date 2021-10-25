@@ -10,18 +10,17 @@ import numpy
 import matplotlib.pyplot as pyplot
 import matplotlib.patches as mpatches
 
-tStart = 8 * 60              # 08:00
-tStartS = 9 * 60              # 09:00
+# 8:00, 10:30, 10:30
+groupStartTimes = {"V": 8*60, "S": 10.5*60, "OB": 10.5*60}
 # No. of teams to start simultaneously
 tStartSimul = {"V":3, "S":4, "OB":4}
 tStartInterval = 15        # Time between starting teams
-tEnd = 30 * 60              # 01:00
+tEnd = 30 * 60              # 06:00
 # Speeds in km/h
 meanSpeed = {"V": 2.3, "S":2.8, "OB": 3.0} 
 stdevSpeed = {"V": 0.35, "S":0.25, "OB":0.3}
 r = random.Random(3823)
 teamTypes = ["V", "S", "OB"]
-
 
 class Activity(object):
 
@@ -178,7 +177,7 @@ def plotActivityStats(activities, title):
     # Plot activity start/end times as Gantt chart
     fig = pyplot.figure()
     figgantt = fig.add_subplot(111)
-    xmin = tStart
+    xmin = groupStartTimes["V"]
     xmax = tEnd
     for teamType in teamTypes:
         y = len(dataStartEnd["V"]) - 0.5
@@ -250,7 +249,8 @@ def avg(list, decimals=2):
 
 
 def minMaxAvg(list):
-    return [min(list), max(list), avg(list)]
+    #return [min(list), max(list), avg(list)]
+    return [numpy.percentile(list,5), numpy.percentile(list,95), avg(list)]
 
 
 def minMaxAvgFormat(list):
@@ -297,6 +297,16 @@ def start(env, teams, activities):
         yield env.timeout(waitTime)
         env.process(t.start(env))
 
+def startTeams(teamType, numberOfTeams, Teams, course):
+    startGroup = tStartSimul[teamType]
+    startTime = groupStartTimes[teamType]
+    for j in range(numberOfTeams):
+        Teams.append(Team("Hold %d (%s)" % (j,teamType), teamType, course[teamType], startTime))
+        if j % startGroup == startGroup - 1:
+            startTime += tStartInterval
+        j += 1
+    return Teams
+
 # Create environment
 
 
@@ -309,27 +319,26 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     Post0 = Activity(8, 10, 13, "Startpost")
     Post0A = Activity(5, 10, 15, "Post 0A")
     Post0B = Activity(5, 10, 15, "Post 0B")
-    Post0C = Activity(5, 10, 15, "Post 0C")
-    Post1 = Activity(5, 10, 15, "Post 1")
-    Post2 = Activity(5, 10, 15, "Post 2")
-    Post3 = Activity(5, 10, 15, "Post 3")
+    Post1 = Activity(8, 10, 15, "Post 1")
+    Post2 = Activity(12, 25, 40, "Post 2")
+    Post3 = Activity(10, 5, 10, "Post 3")
     Post4 = Activity(5, 10, 15, "Post 4")
     Post5 = Activity(5, 10, 15, "Post 5")
-    Post5A = Activity(5, 10, 15, "Post 5A")
-    Post5B = Activity(99, 5, 10, "Post 5B") # Død post - rundt om grusgraven
+    Post5A = Activity(99, 5, 10, "Post 5A") # Død post inden 5B
+    Post5B = Activity(99, 5, 10, "Post 5B")
     Post6 = Activity(5, 10, 15, "Post 6")
     PostM = Activity(99, 60, 70, "Mad") # Opgave på madposten. Tager ikke ekstra tid
     Post7 = Activity(99, 0, 0, "Post 7")
     Post8 = Activity(5, 10, 15, "Post 8")
     Post9 = Activity(5, 10, 15, "Post 9")
-    Post10 = Activity(5, 10, 15, "Post 10")
+    Post10 = Activity(8, 5, 10, "Post 10")
     Post11 = Activity(5, 10, 15, "Post 11")
     Post12 = Activity(5, 10, 15, "Post 12")
     Post13 = Activity(5, 10, 15, "Post 13")
     Post14 = Activity(5, 10, 15, "DFO")
     PostMaal = Activity(99, None, None, "Mål")
 
-    Activities = [Post0, Post0A, Post0B, Post0C, Post1, Post2, Post3, Post4, Post5, Post5A,
+    Activities = [Post0, Post0A, Post0B, Post1, Post2, Post3, Post4, Post5, Post5A,
                 Post5B, Post6, PostM, Post7, Post8, Post9, Post10, Post11, Post12, Post13, Post14, PostMaal]
 
     """
@@ -352,16 +361,14 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
                 Post13, 1.6,
                 Post14, 1.4,
                 PostMaal],
-          "S": [Post0, 1.0,
-                Post0A, 1.2,
-                Post0B, 2.5,
+          "S": [Post0, 1.5,
                 Post1, 1.2,
                 Post2, 1.1,
                 Post3, 1.2,
                 Post4, 1.0,
-                Post5, 2.5,
-                Post5A, 2.5, # 6 km på kortet
-                Post5B, 0,
+                Post5, 1.8,
+                Post5A, 2.2,
+                Post5B, 3.0,
                 Post6, 2.0,
                 PostM, 0,
                 Post7, 2.0,
@@ -380,9 +387,9 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
                 Post2, 1.1,
                 Post3, 1.2,
                 Post4, 1.0,
-                Post5, 2.5,
-                Post5A, 2.5, # 6 km på kortet
-                Post5B, 0,
+                Post5, 1.8,
+                Post5A, 2.2,
+                Post5B, 3.0,
                 Post6, 2.0,
                 PostM, 0,
                 Post7, 2.0,
@@ -402,22 +409,29 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
 
     # Setup teams
     Teams = []
-    startTime = tStart
 
-    teamType = "V"
-    startGroup = tStartSimul[teamType]
-    for j in range(noVTeams + noSTeams + noOBTeams):
-        Teams.append(Team("Hold %d (%s)" % (j,teamType), teamType, course[teamType], startTime))
-        if j % startGroup == startGroup - 1:
-            startTime += tStartInterval
-        if j == noVTeams - 1:  # We have created last VTeam - switch to S
-            j = 0
-            teamType = "S"
-            startTime = tStartS
-        if j == noVTeams + noSTeams - 1:  # We have created last STeam - switch to OB
-            teamType = "OB"
-        startGroup = tStartSimul[teamType]
-        j += 1
+    ## Old start logic. Continuous dispatch of all teams
+    # teamType = "V"
+    # startGroup = tStartSimul[teamType]
+    # for j in range(noVTeams + noSTeams + noOBTeams):
+    #     Teams.append(Team("Hold %d (%s)" % (j,teamType), teamType, course[teamType], startTime))
+    #     if j % startGroup == startGroup - 1:
+    #         startTime += tStartInterval
+    #     if j == noVTeams - 1:  # We have created last VTeam - switch to S
+    #         j = 0
+    #         teamType = "S"
+    #         startTime = tStartS
+    #     if j == noVTeams + noSTeams - 1:  # We have created last STeam - switch to OB
+    #         j = 0
+    #         teamType = "OB"
+    #         startTime = tStartOB
+    #     startGroup = tStartSimul[teamType]
+    #     j += 1
+
+    ## New start logic. Start each group at a fixed time
+    Teams = startTeams("V", noVTeams, Teams, course)
+    Teams = startTeams("S", noSTeams, Teams, course)
+    Teams = startTeams("OB", noOBTeams, Teams, course)
 
     Teams.sort(key=lambda x: x.startTime)
     print("Running %d simulations" % noOfRuns)
@@ -460,4 +474,4 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     plotActivityStats(Activities, title)
 
 # Run simulation (#Runs, #VTeams, #STeams, #OBTeams)
-simulate(50, 25, 10, 25)
+simulate(50, 29, 11, 16)
