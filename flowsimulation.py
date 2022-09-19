@@ -16,9 +16,10 @@ groupStartTimes = {"V": 8*60, "S": 10.5*60, "OB": 10.5*60}
 tStartSimul = {"V":3, "S":4, "OB":4}
 tStartInterval = 15        # Time between starting teams
 tEnd = 30 * 60              # 06:00
-# Speeds in km/h
-meanSpeed = {"V": 2.3, "S":2.8, "OB": 3.0} 
-stdevSpeed = {"V": 0.35, "S":0.25, "OB":0.3}
+tActivityBuffer = 5         # Extra buffer to add to activities
+# Speeds in km/h (2021 measurements)
+meanSpeed = {"V": 3.3, "S":4, "OB": 4.3} 
+stdevSpeed = {"V": 0.4, "S":0.4, "OB":0.5}
 r = random.Random(3823)
 teamTypes = ["V", "S", "OB"]
 
@@ -52,10 +53,8 @@ class Activity(object):
         if self.minDuration is None:
             yield self.env.timeout(0)
         else:
-            # TODO: use random.normalvariate and express min/max duration as
-            # mean/std.dev
             yield self.env.timeout(r.uniform(self.minDuration,
-                                             self.maxDuration))
+                                             self.maxDuration) + tActivityBuffer)
 
         tOut = self.env.now
         # print "%s completed %s at %s" % (team.name, self.name,
@@ -95,8 +94,6 @@ class Team:
     def start(self, env):
         for element in self.course:
             if isinstance(element, numbers.Number):
-                # TODO: Better model for speed, perhaps as function of time of
-                # day?
                 walkingTime = (element / self.speed) * 60
                 #print("%s walks %.1f km in %s" % (self.name, element, formatTime(walkingTime)))
                 yield self.env.timeout(walkingTime)
@@ -335,7 +332,7 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     Post11 = Activity(5, 10, 15, "Post 11")
     Post12 = Activity(5, 10, 15, "Post 12")
     Post13 = Activity(5, 10, 15, "Post 13")
-    Post14 = Activity(5, 10, 15, "DFO")
+    Post14 = Activity(20, 10, 60, "DFO")
     PostMaal = Activity(99, None, None, "Mål")
 
     Activities = [Post0, Post0A, Post0B, Post1, Post2, Post3, Post4, Post5, Post5A,
@@ -344,8 +341,8 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     """
     Link activities [act1, distance1, act2, distance2, ...]
     """
-    course = {"V": [Post0, 1.5,
-                Post1, 1.2,
+    course = {"V": [Post0, 0.8,
+                Post1, 2,
                 Post2, 1.1,
                 Post3, 1.2,
                 Post4, 1.0,
@@ -361,8 +358,8 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
                 Post13, 1.6,
                 Post14, 1.4,
                 PostMaal],
-          "S": [Post0, 1.5,
-                Post1, 1.2,
+          "S": [Post0, 0.8,
+                Post1, 2,
                 Post2, 1.1,
                 Post3, 1.2,
                 Post4, 1.0,
@@ -381,8 +378,8 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
                 Post14, 1.4,
                 PostMaal],
           "OB": [Post0, 1.0,
-                Post0A, 1.2,
-                Post0B, 2.5,
+                Post0A, 1.7,
+                Post0B, 2,
                 Post1, 1.2,
                 Post2, 1.1,
                 Post3, 1.2,
@@ -474,4 +471,4 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     plotActivityStats(Activities, title)
 
 # Run simulation (#Runs, #VTeams, #STeams, #OBTeams)
-simulate(50, 29, 11, 16)
+simulate(50, 30, 12, 15)
