@@ -11,7 +11,7 @@ import matplotlib.pyplot as pyplot
 import matplotlib.patches as mpatches
 
 # 8:00, 10:30, 10:30
-groupStartTimes = {"V": 8*60, "S": 10.5*60, "OB": 10.5*60}
+groupStartTimes = {"V": 8*60, "S": 10.25*60, "OB": 11*60}
 # No. of teams to start simultaneously
 tStartSimul = {"V":3, "S":4, "OB":4}
 tStartInterval = 15        # Time between starting teams
@@ -316,87 +316,88 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     Post0 = Activity(8, 10, 13, "Startpost")
     Post0A = Activity(5, 10, 15, "Post 0A")
     Post0B = Activity(5, 10, 15, "Post 0B")
-    Post1 = Activity(8, 10, 15, "Post 1")
-    Post2 = Activity(12, 25, 40, "Post 2")
-    Post3 = Activity(10, 5, 10, "Post 3")
+    Post1 = Activity(12, 25, 40, "Post 1")
+    Post2 = Activity(5, 10, 15, "Post 2")
+    Post3 = Activity(5, 10, 15, "Post 3")
     Post4 = Activity(5, 10, 15, "Post 4")
     Post5 = Activity(5, 10, 15, "Post 5")
-    Post5A = Activity(99, 5, 10, "Post 5A") # Død post inden 5B
-    Post5B = Activity(99, 5, 10, "Post 5B")
     Post6 = Activity(5, 10, 15, "Post 6")
-    PostM = Activity(99, 60, 70, "Mad") # Opgave på madposten. Tager ikke ekstra tid
-    Post7 = Activity(99, 0, 0, "Post 7")
+    Post7 = Activity(99, 0, 5, "Post 7") # Død
     Post8 = Activity(5, 10, 15, "Post 8")
-    Post9 = Activity(5, 10, 15, "Post 9")
-    Post10 = Activity(8, 5, 10, "Post 10")
+    Post9 = Activity(5, 0, 5, "Post 9") # Død
+    Post10 = Activity(99, 60, 70, "Mad") # Opgave på madposten. Tager ikke ekstra tid
+    Post10A = Activity(4, 10, 15, "Post 10A")
     Post11 = Activity(5, 10, 15, "Post 11")
     Post12 = Activity(5, 10, 15, "Post 12")
     Post13 = Activity(5, 10, 15, "Post 13")
-    Post14 = Activity(20, 10, 60, "DFO")
+    Post13A = Activity(10, 25, 40, "Post 13A")
+    Post14 = Activity(5, 10, 15, "Post 14")
+    Post15 = Activity(20, 10, 60, "DFO")
     PostMaal = Activity(99, None, None, "Mål")
 
-    Activities = [Post0, Post0A, Post0B, Post1, Post2, Post3, Post4, Post5, Post5A,
-                Post5B, Post6, PostM, Post7, Post8, Post9, Post10, Post11, Post12, Post13, Post14, PostMaal]
+    Activities = [Post0, Post0A, Post0B, Post1, Post2, Post3, Post4, Post5, Post6, Post7, Post8,
+                Post9, Post10, Post10A, Post11, Post12, Post13, Post13A, Post14, Post15, PostMaal]
 
     """
     Link activities [act1, distance1, act2, distance2, ...]
     """
-    course = {"V": [Post0, 0.8,
-                Post1, 2,
-                Post2, 1.1,
-                Post3, 1.2,
-                Post4, 1.0,
-                Post5, 2.4,
-                Post6, 2.0,
-                PostM, 0,
-                Post7, 2.0,
-                Post8, 2.1,
+    course = {"V": [
+                Post0, 2,
+                Post1, 1.2,
+                Post2, 1,
+                Post3, 1.6,
+                Post4, 1.2,
+                Post5, 1.5,
+                Post6, 1,
+                Post7, 0.7,
+                Post8, 1.3,
                 Post9, 1.5,
-                Post10, 1.4,
-                Post11, 1.9,
-                Post12, 1.3,
+                Post10, 2.1,
+                Post11, 0.7,
+                Post12, 1.2,
                 Post13, 1.6,
-                Post14, 1.4,
+                Post14, 1.2,
+                Post15, 1.7,
                 PostMaal],
-          "S": [Post0, 0.8,
-                Post1, 2,
-                Post2, 1.1,
-                Post3, 1.2,
-                Post4, 1.0,
-                Post5, 1.8,
-                Post5A, 2.2,
-                Post5B, 3.0,
-                Post6, 2.0,
-                PostM, 0,
-                Post7, 2.0,
-                Post8, 2.1,
-                Post9, 1.5,
-                Post10, 1.4,
-                Post11, 1.9,
-                Post12, 1.3,
-                Post13, 1.6,
-                Post14, 1.4,
-                PostMaal],
-          "OB": [Post0, 1.0,
-                Post0A, 1.7,
+          "S": [Post0, 1.7,
+                Post0A, 1,
                 Post0B, 2,
                 Post1, 1.2,
-                Post2, 1.1,
-                Post3, 1.2,
-                Post4, 1.0,
-                Post5, 1.8,
-                Post5A, 2.2,
-                Post5B, 3.0,
-                Post6, 2.0,
-                PostM, 0,
-                Post7, 2.0,
-                Post8, 2.1,
+                Post2, 1,
+                Post3, 1.6,
+                Post4, 1.2,
+                Post5, 1.5,
+                Post6, 1,
+                Post7, 0.7,
+                Post8, 1.3,
                 Post9, 1.5,
-                Post10, 1.4,
-                Post11, 1.9,
-                Post12, 1.3,
+                Post10, 2.1,
+                Post11, 0.7,
+                Post12, 1.2,
                 Post13, 1.6,
-                Post14, 1.4,
+                Post14, 1.2,
+                Post15, 1.7,
+                PostMaal],
+          "OB": [
+                Post0, 1.7,
+                Post0A, 1,
+                Post0B, 2,
+                Post1, 1.2,
+                Post2, 1,
+                Post3, 1.6,
+                Post4, 1.2,
+                Post5, 1.5,
+                Post6, 1,
+                Post7, 0.7,
+                Post8, 1.3,
+                Post9, 1.5,
+                Post10, 2.1,
+                Post11, 0.7,
+                Post12, 1.2,
+                Post13, 1.6,
+                Post13A, 0,
+                Post14, 1.2,
+                Post15, 1.7,
                 PostMaal]}
     """ Setup course END """
 
