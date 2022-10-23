@@ -11,9 +11,9 @@ import matplotlib.pyplot as pyplot
 import matplotlib.patches as mpatches
 
 # 8:00, 10:15, 11:00
-groupStartTimes = {"V": 8*60, "S": 10.25*60, "OB": 11*60}
+groupStartTimes = {"V": 8*60, "S": 9.25*60, "OB": 10.75*60}
 # No. of teams to start simultaneously
-tStartSimul = {"V":3, "S":4, "OB":4}
+tStartSimul = {"V":3, "S":3, "OB":3}
 tStartInterval = 15        # Time between starting teams
 tEnd = 30 * 60              # 06:00
 tActivityBuffer = 5         # Extra buffer to add to activities
@@ -254,7 +254,7 @@ def startCloseTime(act: Activity):
     allStartTimes = act.accFirstTeamStart["V"] + act.accFirstTeamStart["S"] + act.accFirstTeamStart["OB"]
     allStartTimes = [i for i in allStartTimes if i] # Remove None values
     p5StartTime = numpy.percentile(allStartTimes or [0], 5)
-    allCloseTimes = act.accLastTeamEnd["V"] + act.accLastTeamEnd["S"] + act.accLastTeamEnd["OB"]
+    allCloseTimes = act.accLastTeamEnd["OB"]
     allCloseTimes = [i for i in allCloseTimes if i] # Remove None values
     p95CloseTime = numpy.percentile(allCloseTimes or [0], 95)
     return [formatTime(p5StartTime), formatTime(p95CloseTime)]
@@ -290,92 +290,94 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     Post0A = Activity(5, 10, 15, "Post 0A")
     Post0B = Activity(5, 10, 15, "Post 0B")
     Post1 = Activity(12, 25, 40, "Post 1")
-    Post2 = Activity(5, 10, 15, "Post 2")
+    Post2 = Activity(5, 2, 5, "Post 2") # Død
     Post3 = Activity(5, 10, 15, "Post 3")
     Post4 = Activity(5, 10, 15, "Post 4")
     Post5 = Activity(5, 10, 15, "Post 5")
-    Post6 = Activity(5, 10, 15, "Post 6")
+    Post6 = Activity(7, 15, 20, "Post 6")
     Post7 = Activity(99, 2, 5, "Post 7") # Død
     Post8 = Activity(5, 10, 15, "Post 8")
-    Post9 = Activity(5, 2, 5, "Post 9") # Død
+    Post9 = Activity(4, 10, 15, "Post 9") # Klatring
     Post10 = Activity(99, 60, 70, "Mad") # Opgave på madposten. Tager ikke ekstra tid
-    Post10A = Activity(4, 10, 15, "Post 10A")
-    Post11 = Activity(8, 10, 15, "Post 11")
-    Post11A = Activity(5, 10, 15, "Post 11A")
+    Post11 = Activity(5, 10, 15, "Post 11")
+    Post11A = Activity(99, 2, 5, "Post 11A") # Død
     Post12 = Activity(5, 10, 15, "Post 12")
     Post13 = Activity(5, 10, 15, "Post 13")
-    Post13A = Activity(10, 25, 40, "Post 13A")
     Post14 = Activity(5, 10, 15, "Post 14")
-    Post15 = Activity(20, 10, 60, "DFO")
+    Post15 = Activity(30, 25, 40, "Post 15")
+    Post16 = Activity(5, 10, 15, "Post 16")
+    Post17 = Activity(20, 10, 60, "DFO")
     PostMaal = Activity(99, None, None, "Mål")
 
     Activities = [Post0, Post0A, Post0B, Post1, Post2, Post3, Post4, Post5, Post6, Post7, Post8,
-                Post9, Post10, Post10A, Post11, Post11A, Post12, Post13, Post13A, Post14, Post15, PostMaal]
+                Post9, Post10, Post11, Post11A, Post12, Post13, Post14, Post15, Post16, Post17, PostMaal]
 
     """
     Link activities [act1, distance1, act2, distance2, ...]
     """
     course = {"V": [
-                Post0, 2,
-                Post1, 1.2,
-                Post2, 1,
-                Post3, 1.6,
+                Post0, 1.9,
+                Post1, 1.6,
+                Post2, 0.6,
+                Post3, 1.5,
                 Post4, 1.2,
                 Post5, 1.5,
                 Post6, 1,
                 Post7, 0.7,
-                Post8, 1.3,
-                Post9, 1.5,
+                Post8, 0.9,
+                Post9, 1.9,
                 Post10, 2.1,
-                Post11, 0.7,
-                Post12, 1.2,
+                Post11, 1.35,
+                Post12, 1.5,
                 Post13, 0,
-                Post13A, 1.6,
-                Post14, 1.2,
-                Post15, 1.7,
+                Post14, 1.4,
+                Post15, 1.8,
+                Post16, 1.2,
+                Post17, 1.7,
                 PostMaal],
           "S": [Post0, 1.5,
                 Post0A, 1.8,
                 Post0B, 1.5,
-                Post1, 1.2,
-                Post2, 1,
-                Post3, 1.6,
+                Post1, 1.6,
+                Post2, 0.6,
+                Post3, 1.5,
                 Post4, 1.2,
                 Post5, 1.5,
                 Post6, 1,
                 Post7, 0.7,
-                Post8, 1.3,
-                Post9, 1.5,
+                Post8, 0.9,
+                Post9, 1.9,
                 Post10, 2.1,
-                Post11, 1.6,
-                Post11A, 1.5,
-                Post12, 1.2,
+                Post11, 1.35,
+                Post12, 1.5,
                 Post13, 0,
-                Post13A, 1.6,
-                Post14, 1.2,
-                Post15, 1.7,
+                Post14, 1.4,
+                Post15, 1.8,
+                Post16, 1.2,
+                Post17, 1.7,
                 PostMaal],
           "OB": [
                 Post0, 1.5,
                 Post0A, 1.8,
                 Post0B, 1.5,
-                Post1, 1.2,
-                Post2, 1,
-                Post3, 1.6,
+                Post1, 1.6,
+                Post2, 0.6,
+                Post3, 1.5,
                 Post4, 1.2,
                 Post5, 1.5,
                 Post6, 1,
                 Post7, 0.7,
-                Post8, 1.3,
-                Post9, 1.5,
+                Post8, 0.9,
+                Post9, 1.9,
                 Post10, 2.1,
-                Post11, 1.6,
-                Post11A, 1.5,
-                Post12, 1.2,
+                Post11, 1.8,
+                Post11A, 1.3,
+                Post12, 1.4,
                 Post13, 0,
-                Post13A, 1.6,
-                Post14, 1.2,
-                Post15, 1.7,
+                Post14, 1.4,
+                Post15, 1.8,
+                Post16, 1.2,
+                Post17, 1.7,
                 PostMaal]}
     """ Setup course END """
 
@@ -432,4 +434,4 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     plotActivityStats(Activities, title)
 
 # Run simulation (#Runs, #VTeams, #STeams, #OBTeams)
-simulate(50, 30, 15, 15)
+simulate(50, 26, 17, 10)
