@@ -299,9 +299,9 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     Post0A = Activity(5, 10, 15, "Post 0A")
     Post0B = Activity(5, 10, 15, "Post 0B")
     Post1 = Activity(5, 10, 15, "Post 1")
-    Post2 = Activity(5, 20, 25, "Post 2")
+    Post2 = Activity(7, 20, 25, "Post 2")
     Post3 = Activity(5, 10, 15, "Post 3")
-    Post4 = Activity(5, 15, 20, "Post 4")
+    Post4 = Activity(10, 15, 20, "Post 4")
     Post5 = Activity(5, 15, 20, "Post 5")
     Post5A = Activity(5, 10, 15, "Post 5A")
     Post5B = Activity(5, 10, 15, "Post 5B")
@@ -440,7 +440,7 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     title = printCourse(course["V"], "Væbnerrute",  noVTeams) + "\n"
     title += printCourse(course["S"], "Seniorrute",  noSTeams) + "\n"
     title += printCourse(course["OB"], "OB-rute", noOBTeams)
-    # plotActivityStats(Activities, title)
+    plotActivityStats(Activities, title)
 
 # Run simulation (#Runs, #VTeams, #STeams, #OBTeams)
-simulate(50, 25, 10, 23)
+simulate(50, 27, 14, 20)
