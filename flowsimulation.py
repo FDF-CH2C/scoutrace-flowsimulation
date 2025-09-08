@@ -10,13 +10,13 @@ import numpy
 import matplotlib.pyplot as pyplot
 import matplotlib.patches as mpatches
 
-# 8:00, 9:00, 10:00
-groupStartTimes = {"V": 8*60, "S": 9*60, "OB": 10*60}
+# 8:00, 9:00, 10:45
+groupStartTimes = {"V": 8*60, "S": 10*60, "OB": 10.75*60}
 # No. of teams to start simultaneously
 tStartSimul = {"V":3, "S":4, "OB":4}
 tStartInterval = 15        # Time between starting teams
-tEnd = 30 * 60              # 06:00
-tActivityBuffer = 5         # Extra buffer to add to activities
+tEnd = 30 * 60             # 06:00
+tActivityBuffer = 5        # Extra buffer to add to activities
 # Speeds in km/h (2021 measurements)
 #meanSpeed = {"V": 3.3, "S":4, "OB": 4.3}
 #stdevSpeed = {"V": 0.4, "S":0.4, "OB":0.5}
@@ -28,10 +28,6 @@ stdevSpeed = {"V": 0.5, "S":0.5, "OB":0.5}
 r = random.Random(1)
 teamTypes = ["V", "S", "OB"]
 
-# Expected
-# V: 20:30 - 03:10
-# S: 23:15 - 03:35
-# OB: 00:00 - 03:30
 class Activity(object):
 
     def __init__(self, capacity, minDuration, maxDuration, name):
@@ -100,7 +96,7 @@ class Team:
         self.env = env
         self.speed = r.normalvariate(meanSpeed[self.teamType], stdevSpeed[self.teamType])
         self.waits = [] # List of waiting times
-        self.endTime = 0
+        self.endTime : 0
 
     # Go through course
     def start(self, env):
@@ -133,22 +129,23 @@ def plotActivityStats(activities, title):
     dataStartEnd = {"V": [], "S": [], "OB": []}
     dataMaxQueue = []
     labels = []
-    noOfRuns = len(activities[0].accWaits)
+    noOfRuns = len(activities["0"].accWaits)
     for a in activities:
+        act = activities[a]
         for teamType in teamTypes:
-            percStart = numpy.percentile(a.accFirstTeamStart[teamType], [5, 10, 25, 50])
-            percEnd = numpy.percentile(a.accLastTeamEnd[teamType], [95, 90, 75, 50])
+            percStart = numpy.percentile(act.accFirstTeamStart[teamType], [5, 10, 25, 50])
+            percEnd = numpy.percentile(act.accLastTeamEnd[teamType], [95, 90, 75, 50])
             dataStartEnd[teamType].append([percStart, percEnd])
-        dataMaxQueue.append(a.accMaxQueue)
+        dataMaxQueue.append(act.accMaxQueue)
         actWaits = []
         teamsArrived = []
-        for list in a.accWaits:
+        for list in act.accWaits:
             actWaits.extend(list)
             teamsArrived.append(len(list))
         dataWait.append(actWaits)
-        labels.append("%s (%.2f hold),\nKapacitet=%d, [%s;%s]" %
-                    (a.name, avg(teamsArrived), a.capacity, a.minDuration,
-                    a.maxDuration))
+        labels.append("%s (%.2f hold),\nKapacitet:%d, [%s;%s]" %
+                    (act.name, avg(teamsArrived), act.capacity, act.minDuration,
+                    act.maxDuration))
 
     # Plot max queue/activity as boxplot
     pyplot.boxplot(dataMaxQueue[::-1], labels=labels[::-1], vert=False)
@@ -259,7 +256,7 @@ def minMaxAvgAvgPerRun(listOfLists):
     return minMaxAvgTime(avgList)
 
 # Find the [0.05;0.95] interval for opening time of an activity
-def startCloseTime(act: Activity):
+def startCloseTime(act= Activity):
     allStartTimes = act.accFirstTeamStart["V"] + act.accFirstTeamStart["S"] + act.accFirstTeamStart["OB"]
     allStartTimes = [i for i in allStartTimes if i] # Remove None values
     p5StartTime = numpy.percentile(allStartTimes or [0], 5)
@@ -270,7 +267,7 @@ def startCloseTime(act: Activity):
 
 def start(env, teams, activities):
     for a in activities:
-        a.setup(env)
+        activities[a].setup(env)
     for t in teams:
         t.setup(env)
         waitTime = max(0, t.startTime - env.now)
@@ -295,99 +292,107 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     Activity: capacity, min, max, name
     """
 
-    Post0 = Activity(8, 10, 13, "Startpost")
-    Post0A = Activity(5, 10, 15, "Post 0A")
-    Post0B = Activity(5, 10, 15, "Post 0B")
-    Post1 = Activity(5, 10, 15, "Post 1")
-    Post2 = Activity(7, 20, 25, "Post 2")
-    Post3 = Activity(5, 10, 15, "Post 3")
-    Post4 = Activity(10, 15, 20, "Post 4")
-    Post5 = Activity(5, 15, 20, "Post 5")
-    Post5A = Activity(5, 10, 15, "Post 5A")
-    Post5B = Activity(5, 10, 15, "Post 5B")
-    Post6 = Activity(7, 15, 20, "Post 6")
-    Post7 = Activity(5, 10, 15, "Post 7") # Død
-    Post8 = Activity(5, 10, 15, "Post 8")
-    Post9 = Activity(4, 10, 15, "Post 9") # Klatring
-    Post10 = Activity(99, 60, 70, "Mad") # Opgave på madposten. Tager ikke ekstra tid
-    Post11 = Activity(5, 10, 15, "Post 11")
-    Post12 = Activity(5, 10, 15, "Post 12")
-    Post13 = Activity(5, 10, 15, "Post 13")
-    Post14 = Activity(5, 10, 15, "Post 14")
-    Post15 = Activity(5, 15, 20, "Post 15")
-    Post16 = Activity(20, 10, 40, "DFO")
-    PostMaal = Activity(99, None, None, "Mål")
-
-    Activities = [Post0, Post0A, Post0B, Post1, Post2, Post3, Post4, Post5, Post5A, Post5B, Post6, Post7, Post8,
-                Post9, Post10, Post11, Post12, Post13, Post14, Post15, Post16, PostMaal]
+    Act = {
+        "0" : Activity(8, 10, 13, "Startpost"),
+        "0A" : Activity(5, 10, 15, "Post 0A"),
+        "0B" : Activity(5, 10, 15, "Post 0B"),
+        "0C" : Activity(5, 10, 15, "Post 0C"),
+        "1" : Activity(5, 10, 15, "Post 1"),
+        "2" : Activity(5, 10, 15, "Post 2"),
+        "3" : Activity(5, 10, 15, "Post 3"),
+        "3H" : Activity(15, 3, 7, "Post 3H"),
+        "4" : Activity(5, 10, 15, "Post 4"),
+        "4H" : Activity(15, 3, 7, "Post 4H"),
+        "5" : Activity(5, 10, 15, "Post 5"),
+        "6" : Activity(5, 10, 15, "Post 6"),
+        "7" : Activity(5, 10, 15, "Post 7"),
+        "8" : Activity(5, 10, 15, "Post 8"),
+        "Mad" : Activity(99, 60, 70, "Mad"),
+        "8A" : Activity(5, 10, 15, "Post 8A"),
+        "9" : Activity(8, 10, 15, "Post 9"),
+        "9A" : Activity(8, 10, 15, "Post 9A"),
+        "10" : Activity(10, 25, 35, "Post 10"),
+        "11" : Activity(15, 3, 10, "Post 11"),
+        "12" : Activity(5, 10, 15, "Post 12"),
+        "13" : Activity(5, 10, 15, "Post 13"),
+        "14" : Activity(5, 10, 15, "Post 14"),
+        "15" : Activity(20, 10, 40, "DFO"),
+        "Mål" : Activity(99, None, None, "Mål")
+    }
 
     """
     Link activities [act1, distance1, act2, distance2, ...]
     """
     course = {"V": [
-                Post0, 1,
-                Post1, 0.7,
-                Post2, 0.9,
-                Post3, 0.1,
-                Post4, 0.5,
-                Post5, 1.9,
-                Post6, 2.2,
-                Post7, 2.1,
-                Post8, 1.4,
-                Post9, 2.2,
-                Post10,2.5,
-                Post11,1.7,
-                Post12,1.2,
-                Post13,2.3,
-                Post14,1.7,
-                Post15,1.7,
-                Post16,1.8,
-                PostMaal],
-          "S": [Post0, 1.3,
-                Post0A,3,
-                Post0B,0.6,
-                Post1, 0.7,
-                Post2, 0.9,
-                Post3, 0.1,
-                Post4, 0.5,
-                Post5, 1.4,
-                Post5A,2.3,
-                Post5B,1.3,
-                Post6, 2.2,
-                Post7, 2.1,
-                Post8, 1.4,
-                Post9, 2.2,
-                Post10,2.5,
-                Post11,1.7,
-                Post12,1.2,
-                Post13,2.3,
-                Post14,1.7,
-                Post15,1.7,
-                Post16,1.8,
-                PostMaal],
+                Act["0"], 1.2,
+                Act["1"], 1.7,
+                Act["2"], 1.7,
+                Act["3"], 0,
+                Act["3H"], 2.7,
+                Act["4"], 0,
+                Act["4H"], 1.3,
+                Act["5"], 1.7,
+                Act["6"], 1.5,
+                Act["7"], 1.6,
+                Act["8"], 0,
+                Act["Mad"], 0.9,
+                Act["9"], 1.3,
+                Act["10"], 1.1,
+                Act["11"], 1.4,
+                Act["12"], 0.8,
+                Act["13"], 1.3,
+                Act["14"], 1.7,
+                Act["15"], 1,
+                Act["Mål"]],
+          "S": [Act["0"], 1.8,
+                Act["0A"], 1.7,
+                Act["0B"], 0.8,
+                Act["0C"], 0.2,
+                Act["1"], 1.7,
+                Act["2"], 1.7,
+                Act["3"], 0,
+                Act["3H"], 2.7,
+                Act["4"], 0,
+                Act["4H"], 1.3,
+                Act["5"], 1.7,
+                Act["6"], 1.5,
+                Act["7"], 1.6,
+                Act["8"], 0,
+                Act["Mad"], 0.9,
+                Act["9"], 1.3,
+                Act["10"], 1.1,
+                Act["11"], 1.4,
+                Act["12"], 0.8,
+                Act["13"], 1.3,
+                Act["14"], 1.7,
+                Act["15"], 1,
+                Act["Mål"]],
           "OB": [
-                Post0, 1.3,
-                Post0A,3,
-                Post0B,0.6,
-                Post1, 0.7,
-                Post2, 0.9,
-                Post3, 0.1,
-                Post4, 0.5,
-                Post5, 1.4,
-                Post5A,2.3,
-                Post5B,1.3,
-                Post6, 2.2,
-                Post7, 2.1,
-                Post8, 1.4,
-                Post9, 2.2,
-                Post10,2.5,
-                Post11,1.7,
-                Post12,1.2,
-                Post13,2.3,
-                Post14,1.7,
-                Post15,1.7,
-                Post16,1.8,
-                PostMaal]}
+                Act["0"], 1.8,
+                Act["0A"], 1.7,
+                Act["0B"], 0.8,
+                Act["0C"], 0.2,
+                Act["1"], 1.7,
+                Act["2"], 1.7,
+                Act["3"], 0,
+                Act["3H"], 2.7,
+                Act["4"], 0,
+                Act["4H"], 1.3,
+                Act["5"], 1.7,
+                Act["6"], 1.5,
+                Act["7"], 1.6,
+                Act["8"], 0,
+                Act["Mad"], 1.2,
+                Act["8A"], 1.2,
+                Act["9"], 1.3,
+                Act["9A"], 0.8,
+                Act["10"], 1.1,
+                Act["11"], 1.4,
+                Act["12"], 0.8,
+                Act["13"], 1.3,
+                Act["14"], 1.7,
+                Act["15"], 1,
+                Act["Mål"]]}
     """ Setup course END """
 
     print(printCourse(course["V"], "Væbnerrute", noVTeams))
@@ -406,17 +411,18 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     print("Running %d simulations" % noOfRuns)
     for i in range(noOfRuns):
         env = simpy.Environment()
-        env.process(start(env, Teams, Activities))
+        env.process(start(env, Teams, Act))
         env.run(until=tEnd)
         for t in Teams:
             t.persistStats()
-        for a in Activities:
-            a.persistStats()
+        for act in Act:
+            Act[act].persistStats()
 
     
     print("Activities: Start/Close")
-    for act in Activities:
-        # print("%s: Total wait=%s, avg. wait=%s, Max queue=%s, StartV=%s, EndV=%s, StartS=%s, EndS=%s, StartOB=%s, EndOB=%s, Start/Close=%s"
+    for a in Act:
+        act = Act[a]
+        # print("%s: Total wait:%s, avg. wait:%s, Max queue:%s, StartV:%s, EndV:%s, StartS:%s, EndS:%s, StartOB:%s, EndOB:%s, Start/Close:%s"
         #       % (act.name, minMaxAvgSumPerRun(act.accWaits),
         #          minMaxAvgAvgPerRun(act.accWaits), minMaxAvg(act.accMaxQueue),
         #          minMaxAvgTime(act.accFirstTeamStart["V"]),
@@ -433,14 +439,14 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
                  startCloseTimes[1]))
     
     for t in Teams:
-        print("%s: Start=%s, End=%s, Total wait=%s, avg. wait/run=%s"
+        print("%s: Start:%s, End:%s, Total wait:%s, avg. wait/run:%s"
               % (t.name, formatTime(t.startTime), minMaxAvgTime(t.accEndTime),
               minMaxAvgSumPerRun(t.accWaits), minMaxAvgAvgPerRun(t.accWaits)))
     
     title = printCourse(course["V"], "Væbnerrute",  noVTeams) + "\n"
     title += printCourse(course["S"], "Seniorrute",  noSTeams) + "\n"
     title += printCourse(course["OB"], "OB-rute", noOBTeams)
-    plotActivityStats(Activities, title)
+    plotActivityStats(Act, title)
 
 # Run simulation (#Runs, #VTeams, #STeams, #OBTeams)
-simulate(50, 27, 14, 20)
+simulate(50, 30, 10, 20)
