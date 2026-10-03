@@ -13,8 +13,8 @@ import numpy
 import matplotlib.pyplot as pyplot
 import matplotlib.patches as mpatches
 
-# 8:00, 9:00, 10:45
-groupStartTimes = {"V": 8*60, "S": 10*60, "OB": 10.75*60}
+# 8:00, 9:00, 11:00
+groupStartTimes = {"V": 8*60, "S": 10*60, "OB": 11*60}
 # No. of teams to start simultaneously
 tStartSimul = {"V":3, "S":4, "OB":4}
 tStartInterval = 15        # Time between starting teams
@@ -370,10 +370,16 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams, routeFile="rute2025.py"):
 
 def main():
     parser = argparse.ArgumentParser(description="Simulate scout race routes")
-    parser.add_argument("--route", default="rute2025.py",
-                        help="route definition file (default: rute2025.py)")
+    parser.add_argument("--route", default="rute2026.py",
+                        help="route definition file (default: rute2026.py)")
+    parser.add_argument("--vteams", type=int, default=30,
+                        help="number of V teams (default: 30)")
+    parser.add_argument("--steams", type=int, default=10,
+                        help="number of S teams (default: 10)")
+    parser.add_argument("--obteams", type=int, default=20,
+                        help="number of OB teams (default: 20)")
     args = parser.parse_args()
-    simulate(50, 30, 10, 20, args.route)
+    simulate(50, args.vteams, args.steams, args.obteams, args.route)
 
 
 if __name__ == "__main__":
