@@ -13,13 +13,12 @@ import numpy
 import matplotlib.pyplot as pyplot
 import matplotlib.patches as mpatches
 
-# 8:00, 9:00, 11:00
+# 8:00, 10:00, 11:00
 groupStartTimes = {"V": 8*60, "S": 10*60, "OB": 11*60}
 # No. of teams to start simultaneously
 tStartSimul = {"V":3, "S":4, "OB":4}
 tStartInterval = 15        # Time between starting teams
 tEnd = 30 * 60             # 06:00
-tActivityBuffer = 5        # Extra buffer to add to activities
 # Speeds in km/h (2021 measurements)
 #meanSpeed = {"V": 3.3, "S":4, "OB": 4.3}
 #stdevSpeed = {"V": 0.4, "S":0.4, "OB":0.5}
@@ -60,10 +59,10 @@ class Activity(object):
             self.firstTeamStart[team.teamType] = tIn
 
         if self.minDuration is None:
-            yield self.env.timeout(0)
+            duration = 0
         else:
-            yield self.env.timeout(r.uniform(self.minDuration,
-                                             self.maxDuration))
+            duration = r.uniform(self.minDuration, self.maxDuration)
+        yield self.env.timeout(duration)
 
         tOut = self.env.now
         self.lastTeamEnd[team.teamType] = tOut
@@ -99,7 +98,7 @@ class Team:
         self.env = env
         self.speed = r.normalvariate(meanSpeed[self.teamType], stdevSpeed[self.teamType])
         self.waits = [] # List of waiting times
-        self.endTime : 0
+        self.endTime = None
 
     # Go through course
     def start(self, env):
@@ -117,7 +116,6 @@ class Team:
                     self.waits.append(waitTime)
                     element.addWaitTime(waitTime)
                     yield env.process(element.acceptTeam(self)) # Do activity
-                    self.env.timeout(tActivityBuffer) # Extra buffer for activity
         self.endTime = env.now
 
     # Store statistics in aggregate arrays for later analysis
@@ -136,9 +134,14 @@ def plotActivityStats(activities, title):
     for a in activities:
         act = activities[a]
         for teamType in teamTypes:
-            percStart = numpy.percentile(act.accFirstTeamStart[teamType], [5, 10, 25, 50])
-            percEnd = numpy.percentile(act.accLastTeamEnd[teamType], [95, 90, 75, 50])
-            dataStartEnd[teamType].append([percStart, percEnd])
+            startTimes = [time for time in act.accFirstTeamStart[teamType] if time]
+            endTimes = [time for time in act.accLastTeamEnd[teamType] if time]
+            if startTimes and endTimes:
+                percStart = numpy.percentile(startTimes, [5, 10, 25, 50])
+                percEnd = numpy.percentile(endTimes, [95, 90, 75, 50])
+                dataStartEnd[teamType].append([percStart, percEnd])
+            else:
+                dataStartEnd[teamType].append(None)
         dataMaxQueue.append(act.accMaxQueue)
         actWaits = []
         teamsArrived = []
@@ -151,7 +154,8 @@ def plotActivityStats(activities, title):
                     act.maxDuration))
 
     # Plot max queue/activity as boxplot
-    pyplot.boxplot(dataMaxQueue[::-1], label=labels[::-1], vert=False)
+    pyplot.boxplot(dataMaxQueue[::-1], tick_labels=labels[::-1],
+                   orientation="horizontal")
     pyplot.title("Længste kø pr. post (%d gennemløb)" % noOfRuns)
     pyplot.grid(True)
 
@@ -167,7 +171,11 @@ def plotActivityStats(activities, title):
             colorString = 'orange'
         elif teamType == "OB":
             colorString = 'gray'
-        for startList, endList in dataStartEnd[teamType]:
+        for percentiles in dataStartEnd[teamType]:
+            if percentiles is None:
+                startList, endList = [0, 0, 0, 0], [0, 0, 0, 0]
+            else:
+                startList, endList = percentiles
             # 5th/95th percentile
             figgantt.barh(y, endList[0] - startList[0], left=startList[0],
                         alpha=0.3, color=colorString)
@@ -189,8 +197,7 @@ def plotActivityStats(activities, title):
     patch50 = mpatches.Patch(alpha=0.75, edgecolor='red', label='50%')
     pyplot.legend(handles=[patch5_95, patch10_90, patch25_75, patch50], loc=1)
 
-    labelsy = pyplot.yticks(numpy.arange(0.5, len(activities) + 0.5), labels[::-1])
-    pyplot.setp(labelsy)
+    pyplot.yticks(numpy.arange(0.5, len(activities) + 0.5), labels[::-1])
     figgantt.set_xlim(xmin, xmax)
     figgantt.xaxis.set_major_locator(pyplot.MultipleLocator(60))
     figgantt.xaxis.set_major_formatter(
@@ -262,10 +269,12 @@ def minMaxAvgAvgPerRun(listOfLists):
 def startCloseTime(act= Activity):
     allStartTimes = act.accFirstTeamStart["V"] + act.accFirstTeamStart["S"] + act.accFirstTeamStart["OB"]
     allStartTimes = [i for i in allStartTimes if i] # Remove None values
-    p5StartTime = numpy.percentile(allStartTimes or [0], 5)
     allCloseTimes = act.accLastTeamEnd["V"] + act.accLastTeamEnd["S"] + act.accLastTeamEnd["OB"]
     allCloseTimes = [i for i in allCloseTimes if i] # Remove None values
-    p95CloseTime = numpy.percentile(allCloseTimes or [0], 95)
+    if not allStartTimes or not allCloseTimes:
+        return ["N/A", "N/A"]
+    p5StartTime = numpy.percentile(allStartTimes, 5)
+    p95CloseTime = numpy.percentile(allCloseTimes, 95)
     return [formatTime(p5StartTime), formatTime(p95CloseTime)]
 
 def start(env, teams, activities):
@@ -359,8 +368,12 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams, routeFile="rute2025.py"):
                  startCloseTimes[1]))
     
     for t in Teams:
-        print("%s: Start:%s, End:%s, Total wait:%s, avg. wait/run:%s"
-              % (t.name, formatTime(t.startTime), minMaxAvgTime(t.accEndTime),
+          completedTimes = [endTime for endTime in t.accEndTime if endTime is not None]
+          completionSummary = minMaxAvgTime(completedTimes) if completedTimes else "N/A"
+          incompleteRuns = len(t.accEndTime) - len(completedTimes)
+          print("%s: Start:%s, End:%s (%d/%d incomplete), Total wait:%s, avg. wait/run:%s"
+              % (t.name, formatTime(t.startTime), completionSummary,
+              incompleteRuns, noOfRuns,
               minMaxAvgSumPerRun(t.accWaits), minMaxAvgAvgPerRun(t.accWaits)))
     
     title = printCourse(course["V"], "Væbnerrute",  noVTeams) + "\n"
