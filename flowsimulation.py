@@ -14,7 +14,7 @@ import matplotlib.pyplot as pyplot
 import matplotlib.patches as mpatches
 
 # 8:00, 10:00, 11:00
-groupStartTimes = {"V": 8*60, "S": 10*60, "OB": 11*60}
+groupStartTimes = {"V": 8*60, "S": 10*60, "OB": 10.75*60}
 # No. of teams to start simultaneously
 tStartSimul = {"V":3, "S":4, "OB":4}
 tStartInterval = 15        # Time between starting teams
