@@ -5,18 +5,20 @@ Output waiting times and completion times"""
 
 import random
 import numbers
+import argparse
+import runpy
+from pathlib import Path
 import simpy
 import numpy
 import matplotlib.pyplot as pyplot
 import matplotlib.patches as mpatches
 
-# 8:00, 9:00, 10:45
+# 8:00, 10:00, 11:00
 groupStartTimes = {"V": 8*60, "S": 10*60, "OB": 10.75*60}
 # No. of teams to start simultaneously
 tStartSimul = {"V":3, "S":4, "OB":4}
 tStartInterval = 15        # Time between starting teams
 tEnd = 30 * 60             # 06:00
-tActivityBuffer = 5        # Extra buffer to add to activities
 # Speeds in km/h (2021 measurements)
 #meanSpeed = {"V": 3.3, "S":4, "OB": 4.3}
 #stdevSpeed = {"V": 0.4, "S":0.4, "OB":0.5}
@@ -57,10 +59,10 @@ class Activity(object):
             self.firstTeamStart[team.teamType] = tIn
 
         if self.minDuration is None:
-            yield self.env.timeout(0)
+            duration = 0
         else:
-            yield self.env.timeout(r.uniform(self.minDuration,
-                                             self.maxDuration))
+            duration = r.uniform(self.minDuration, self.maxDuration)
+        yield self.env.timeout(duration)
 
         tOut = self.env.now
         self.lastTeamEnd[team.teamType] = tOut
@@ -96,7 +98,7 @@ class Team:
         self.env = env
         self.speed = r.normalvariate(meanSpeed[self.teamType], stdevSpeed[self.teamType])
         self.waits = [] # List of waiting times
-        self.endTime : 0
+        self.endTime = None
 
     # Go through course
     def start(self, env):
@@ -114,7 +116,6 @@ class Team:
                     self.waits.append(waitTime)
                     element.addWaitTime(waitTime)
                     yield env.process(element.acceptTeam(self)) # Do activity
-                    self.env.timeout(tActivityBuffer) # Extra buffer for activity
         self.endTime = env.now
 
     # Store statistics in aggregate arrays for later analysis
@@ -129,13 +130,18 @@ def plotActivityStats(activities, title):
     dataStartEnd = {"V": [], "S": [], "OB": []}
     dataMaxQueue = []
     labels = []
-    noOfRuns = len(activities["0"].accWaits)
+    noOfRuns = len(next(iter(activities.values())).accWaits)
     for a in activities:
         act = activities[a]
         for teamType in teamTypes:
-            percStart = numpy.percentile(act.accFirstTeamStart[teamType], [5, 10, 25, 50])
-            percEnd = numpy.percentile(act.accLastTeamEnd[teamType], [95, 90, 75, 50])
-            dataStartEnd[teamType].append([percStart, percEnd])
+            startTimes = [time for time in act.accFirstTeamStart[teamType] if time]
+            endTimes = [time for time in act.accLastTeamEnd[teamType] if time]
+            if startTimes and endTimes:
+                percStart = numpy.percentile(startTimes, [5, 10, 25, 50])
+                percEnd = numpy.percentile(endTimes, [95, 90, 75, 50])
+                dataStartEnd[teamType].append([percStart, percEnd])
+            else:
+                dataStartEnd[teamType].append(None)
         dataMaxQueue.append(act.accMaxQueue)
         actWaits = []
         teamsArrived = []
@@ -148,7 +154,8 @@ def plotActivityStats(activities, title):
                     act.maxDuration))
 
     # Plot max queue/activity as boxplot
-    pyplot.boxplot(dataMaxQueue[::-1], labels=labels[::-1], vert=False)
+    pyplot.boxplot(dataMaxQueue[::-1], tick_labels=labels[::-1],
+                   orientation="horizontal")
     pyplot.title("Længste kø pr. post (%d gennemløb)" % noOfRuns)
     pyplot.grid(True)
 
@@ -164,7 +171,11 @@ def plotActivityStats(activities, title):
             colorString = 'orange'
         elif teamType == "OB":
             colorString = 'gray'
-        for startList, endList in dataStartEnd[teamType]:
+        for percentiles in dataStartEnd[teamType]:
+            if percentiles is None:
+                startList, endList = [0, 0, 0, 0], [0, 0, 0, 0]
+            else:
+                startList, endList = percentiles
             # 5th/95th percentile
             figgantt.barh(y, endList[0] - startList[0], left=startList[0],
                         alpha=0.3, color=colorString)
@@ -186,8 +197,7 @@ def plotActivityStats(activities, title):
     patch50 = mpatches.Patch(alpha=0.75, edgecolor='red', label='50%')
     pyplot.legend(handles=[patch5_95, patch10_90, patch25_75, patch50], loc=1)
 
-    labelsy = pyplot.yticks(numpy.arange(0.5, len(activities) + 0.5), labels[::-1])
-    pyplot.setp(labelsy)
+    pyplot.yticks(numpy.arange(0.5, len(activities) + 0.5), labels[::-1])
     figgantt.set_xlim(xmin, xmax)
     figgantt.xaxis.set_major_locator(pyplot.MultipleLocator(60))
     figgantt.xaxis.set_major_formatter(
@@ -259,10 +269,12 @@ def minMaxAvgAvgPerRun(listOfLists):
 def startCloseTime(act= Activity):
     allStartTimes = act.accFirstTeamStart["V"] + act.accFirstTeamStart["S"] + act.accFirstTeamStart["OB"]
     allStartTimes = [i for i in allStartTimes if i] # Remove None values
-    p5StartTime = numpy.percentile(allStartTimes or [0], 5)
     allCloseTimes = act.accLastTeamEnd["V"] + act.accLastTeamEnd["S"] + act.accLastTeamEnd["OB"]
     allCloseTimes = [i for i in allCloseTimes if i] # Remove None values
-    p95CloseTime = numpy.percentile(allCloseTimes or [0], 95)
+    if not allStartTimes or not allCloseTimes:
+        return ["N/A", "N/A"]
+    p5StartTime = numpy.percentile(allStartTimes, 5)
+    p95CloseTime = numpy.percentile(allCloseTimes, 95)
     return [formatTime(p5StartTime), formatTime(p95CloseTime)]
 
 def start(env, teams, activities):
@@ -284,116 +296,33 @@ def startTeams(teamType, numberOfTeams, Teams, course):
         j += 1
     return Teams
 
+def loadCourse(routeFile):
+    routePath = Path(routeFile)
+    if not routePath.is_absolute():
+        routePath = Path(__file__).resolve().parent / routePath
+
+    route = runpy.run_path(str(routePath), init_globals={"Activity": Activity})
+    course = route["course"]
+
+    if "Act" in route:
+        activities = route["Act"]
+    elif "Activities" in route:
+        activities = {str(index): activity
+                      for index, activity in enumerate(route["Activities"])}
+    else:
+        uniqueActivities = {}
+        for routeElements in course.values():
+            for element in routeElements:
+                if isinstance(element, Activity):
+                    uniqueActivities.setdefault(str(len(uniqueActivities)), element)
+        activities = uniqueActivities
+
+    return course, activities
+
 # Create environment
 
-def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
-    """
-    Setup course - insert own course here!
-    Activity: capacity, min, max, name
-    """
-
-    Act = {
-        "0" : Activity(8, 10, 13, "Startpost"),
-        "0A" : Activity(5, 10, 15, "Post 0A"),
-        "0B" : Activity(5, 10, 15, "Post 0B"),
-        "0C" : Activity(5, 10, 15, "Post 0C"),
-        "1" : Activity(5, 10, 15, "Post 1"),
-        "2" : Activity(5, 10, 15, "Post 2"),
-        "3" : Activity(5, 10, 15, "Post 3"),
-        "3H" : Activity(15, 3, 7, "Post 3H"),
-        "4" : Activity(5, 10, 15, "Post 4"),
-        "4H" : Activity(15, 3, 7, "Post 4H"),
-        "5" : Activity(5, 10, 15, "Post 5"),
-        "6" : Activity(5, 10, 15, "Post 6"),
-        "7" : Activity(5, 10, 15, "Post 7"),
-        "8" : Activity(5, 10, 15, "Post 8"),
-        "Mad" : Activity(99, 60, 70, "Mad"),
-        "8A" : Activity(5, 10, 15, "Post 8A"),
-        "9" : Activity(8, 10, 15, "Post 9"),
-        "9A" : Activity(8, 10, 15, "Post 9A"),
-        "10" : Activity(10, 25, 35, "Post 10"),
-        "11" : Activity(15, 3, 10, "Post 11"),
-        "12" : Activity(5, 10, 15, "Post 12"),
-        "13" : Activity(5, 10, 15, "Post 13"),
-        "14" : Activity(5, 10, 15, "Post 14"),
-        "15" : Activity(20, 10, 40, "DFO"),
-        "Mål" : Activity(99, None, None, "Mål")
-    }
-
-    """
-    Link activities [act1, distance1, act2, distance2, ...]
-    """
-    course = {"V": [
-                Act["0"], 1.2,
-                Act["1"], 1.7,
-                Act["2"], 1.7,
-                Act["3"], 0,
-                Act["3H"], 2.7,
-                Act["4"], 0,
-                Act["4H"], 1.3,
-                Act["5"], 1.7,
-                Act["6"], 1.5,
-                Act["7"], 1.6,
-                Act["8"], 0,
-                Act["Mad"], 0.9,
-                Act["9"], 1.3,
-                Act["10"], 1.1,
-                Act["11"], 1.4,
-                Act["12"], 0.8,
-                Act["13"], 1.3,
-                Act["14"], 1.7,
-                Act["15"], 1,
-                Act["Mål"]],
-          "S": [Act["0"], 1.8,
-                Act["0A"], 1.7,
-                Act["0B"], 0.8,
-                Act["0C"], 0.2,
-                Act["1"], 1.7,
-                Act["2"], 1.7,
-                Act["3"], 0,
-                Act["3H"], 2.7,
-                Act["4"], 0,
-                Act["4H"], 1.3,
-                Act["5"], 1.7,
-                Act["6"], 1.5,
-                Act["7"], 1.6,
-                Act["8"], 0,
-                Act["Mad"], 0.9,
-                Act["9"], 1.3,
-                Act["10"], 1.1,
-                Act["11"], 1.4,
-                Act["12"], 0.8,
-                Act["13"], 1.3,
-                Act["14"], 1.7,
-                Act["15"], 1,
-                Act["Mål"]],
-          "OB": [
-                Act["0"], 1.8,
-                Act["0A"], 1.7,
-                Act["0B"], 0.8,
-                Act["0C"], 0.2,
-                Act["1"], 1.7,
-                Act["2"], 1.7,
-                Act["3"], 0,
-                Act["3H"], 2.7,
-                Act["4"], 0,
-                Act["4H"], 1.3,
-                Act["5"], 1.7,
-                Act["6"], 1.5,
-                Act["7"], 1.6,
-                Act["8"], 0,
-                Act["Mad"], 1.2,
-                Act["8A"], 1.2,
-                Act["9"], 1.3,
-                Act["9A"], 0.8,
-                Act["10"], 1.1,
-                Act["11"], 1.4,
-                Act["12"], 0.8,
-                Act["13"], 1.3,
-                Act["14"], 1.7,
-                Act["15"], 1,
-                Act["Mål"]]}
-    """ Setup course END """
+def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams, routeFile="rute2025.py"):
+    course, Act = loadCourse(routeFile)
 
     print(printCourse(course["V"], "Væbnerrute", noVTeams))
     print(printCourse(course["S"], "Seniorrute", noSTeams))
@@ -439,8 +368,12 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
                  startCloseTimes[1]))
     
     for t in Teams:
-        print("%s: Start:%s, End:%s, Total wait:%s, avg. wait/run:%s"
-              % (t.name, formatTime(t.startTime), minMaxAvgTime(t.accEndTime),
+          completedTimes = [endTime for endTime in t.accEndTime if endTime is not None]
+          completionSummary = minMaxAvgTime(completedTimes) if completedTimes else "N/A"
+          incompleteRuns = len(t.accEndTime) - len(completedTimes)
+          print("%s: Start:%s, End:%s (%d/%d incomplete), Total wait:%s, avg. wait/run:%s"
+              % (t.name, formatTime(t.startTime), completionSummary,
+              incompleteRuns, noOfRuns,
               minMaxAvgSumPerRun(t.accWaits), minMaxAvgAvgPerRun(t.accWaits)))
     
     title = printCourse(course["V"], "Væbnerrute",  noVTeams) + "\n"
@@ -448,5 +381,19 @@ def simulate(noOfRuns, noVTeams, noSTeams, noOBTeams):
     title += printCourse(course["OB"], "OB-rute", noOBTeams)
     plotActivityStats(Act, title)
 
-# Run simulation (#Runs, #VTeams, #STeams, #OBTeams)
-simulate(50, 30, 10, 20)
+def main():
+    parser = argparse.ArgumentParser(description="Simulate scout race routes")
+    parser.add_argument("--route", default="rute2026.py",
+                        help="route definition file (default: rute2026.py)")
+    parser.add_argument("--vteams", type=int, default=30,
+                        help="number of V teams (default: 30)")
+    parser.add_argument("--steams", type=int, default=10,
+                        help="number of S teams (default: 10)")
+    parser.add_argument("--obteams", type=int, default=20,
+                        help="number of OB teams (default: 20)")
+    args = parser.parse_args()
+    simulate(50, args.vteams, args.steams, args.obteams, args.route)
+
+
+if __name__ == "__main__":
+    main()
